@@ -157,7 +157,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Candidate Info Box */}
             <div className="md:col-span-2 bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-24 h-24 rounded-full bg-emerald-100 border-4 border-white shadow-md flex items-center justify-center text-emerald-700 font-extrabold text-3xl overflow-hidden shrink-0">
+              <div className="w-24 h-24 rounded-full bg-orange-100 border-4 border-white shadow-md flex items-center justify-center text-orange-700 font-extrabold text-3xl overflow-hidden shrink-0">
                 {profileData?.avatarUrl ? (
                   <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
@@ -167,7 +167,7 @@ export default function ProfilePage() {
 
               <div className="text-center sm:text-left space-y-1.5 flex-1">
                 <h2 className="text-xl font-black text-gray-900">{name || (language === "bn" ? "রাহাতুল ইসলাম" : "Rahatul Islam")}</h2>
-                <div className="text-xs font-semibold text-emerald-600">
+                <div className="text-xs font-semibold text-orange-600">
                   {language === "bn" ? "ক্যান্ডিডেট" : "Candidate"}
                 </div>
                 <div className="pt-2 space-y-1 text-xs text-gray-500">

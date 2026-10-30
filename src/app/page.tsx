@@ -189,36 +189,100 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Hero Visual with candidate & floating category tags */}
+            {/* Right Hero Visual: Pure Graphical Showcase (No human picture/photo) */}
             <div className="lg:col-span-5 relative flex items-center justify-center">
               {/* Ambient Glow */}
-              <div className="absolute w-72 h-72 bg-gradient-to-tr from-amber-400/30 to-orange-500/20 rounded-full blur-3xl -z-10" />
+              <div className="absolute w-80 h-80 bg-gradient-to-tr from-amber-400/25 to-orange-500/20 rounded-full blur-3xl -z-10" />
 
-              {/* Candidate Image Card matching the uploaded picture with yellow armchair */}
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white w-full max-w-sm sm:max-w-md">
-                <img
-                  src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=900&auto=format&fit=crop"
-                  alt="Candidate"
-                  className="w-full h-[400px] object-cover object-top"
-                />
+              {/* Pure Graphical Showcase Card */}
+              <div className="relative rounded-3xl bg-white/95 backdrop-blur-xl shadow-2xl border-2 border-orange-100/80 p-6 sm:p-7 w-full max-w-sm sm:max-w-md space-y-5">
+                {/* Header Badge & Live Status */}
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-black uppercase tracking-wider text-gray-700">
+                      {language === "bn" ? "লাইভ জব সার্কুলার" : "Live Job Circulars"}
+                    </span>
+                  </div>
+                  <span className="bg-orange-50 text-orange-700 font-bold text-[11px] px-2.5 py-1 rounded-full border border-orange-200">
+                    ⚡ 99.5% {language === "bn" ? "সঠিক ম্যাচ" : "Match Rate"}
+                  </span>
+                </div>
 
-                {/* Floating Curved Skill / Category Pills matching mockup layout */}
-                <div className="absolute right-3 top-6 flex flex-col items-end gap-2.5">
-                  <span className="bg-[#FEF08A] text-amber-950 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-md border border-amber-300/80 animate-bounce delay-100">
-                    💻 Technology & IT
-                  </span>
-                  <span className="bg-[#FED7AA] text-orange-950 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-md border border-orange-300/80">
-                    🌾 {language === "bn" ? "কৃষি ও এগ্রো-ফার্মিং" : "Agriculture & Agro"}
-                  </span>
-                  <span className="bg-[#BAE6FD] text-sky-950 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-md border border-sky-300/80">
-                    🐟 {language === "bn" ? "মৎস্য ও অ্যাকুয়াকালচার" : "Fisheries & Marine"}
-                  </span>
-                  <span className="bg-[#E9D5FF] text-purple-950 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-md border border-purple-300/80">
-                    🏛️ {language === "bn" ? "সরকারি ও প্রশাসন" : "Govt & Administration"}
-                  </span>
-                  <span className="bg-[#BBF7D0] text-emerald-950 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-md border border-emerald-300/80">
-                    🏢 {language === "bn" ? "বেসরকারি ও কর্পোরেট" : "Private & Corporate"}
-                  </span>
+                {/* Central Career Metric Feature */}
+                <div className="bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 text-white rounded-2xl p-5 shadow-lg shadow-orange-500/20 relative overflow-hidden">
+                  <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-sm" />
+                  <div className="flex items-start justify-between relative z-10">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-orange-100">
+                        {language === "bn" ? "স্মার্ট ক্যারিয়ার পোর্টাল" : "Smart Career Portal"}
+                      </span>
+                      <h4 className="text-xl font-black mt-1">
+                        {language === "bn" ? "১-ক্লিকে তাৎক্ষণিক আবেদন" : "1-Click Direct Apply"}
+                      </h4>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-amber-200" />
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-medium text-orange-100">
+                    <span>{language === "bn" ? "প্রতিদিন নতুন নিয়োগ" : "Daily Fresh Openings"}</span>
+                    <span className="font-bold text-white bg-white/20 px-2 py-0.5 rounded-full text-[11px]">
+                      ১২০+ {language === "bn" ? "টি বিজ্ঞপ্তি" : "Circulars"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Floating Skill & Category Badges */}
+                <div className="space-y-2 pt-1">
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    {language === "bn" ? "জনপ্রিয় চাকরির খাতসমূহ" : "Popular Hiring Sectors"}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="bg-[#FEF08A] text-amber-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-amber-300">
+                      💻 Technology & IT
+                    </span>
+                    <span className="bg-[#FED7AA] text-orange-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-orange-300">
+                      🌾 {language === "bn" ? "কৃষি ও এগ্রো-ফার্মিং" : "Agriculture & Agro"}
+                    </span>
+                    <span className="bg-[#BAE6FD] text-sky-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-sky-300">
+                      🐟 {language === "bn" ? "মৎস্য ও অ্যাকুয়াকালচার" : "Fisheries & Marine"}
+                    </span>
+                    <span className="bg-[#E9D5FF] text-purple-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-purple-300">
+                      🏛️ {language === "bn" ? "সরকারি ও প্রশাসন" : "Govt & Administration"}
+                    </span>
+                    <span className="bg-[#BBF7D0] text-emerald-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-emerald-300">
+                      🏢 {language === "bn" ? "বেসরকারি ও কর্পোরেট" : "Private & Corporate"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Info Checklist */}
+                <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-150 grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold text-gray-700">
+                      {language === "bn" ? "ভেরিফাইড প্রতিষ্ঠান" : "Verified Companies"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold text-gray-700">
+                      {language === "bn" ? "এসএমএস অ্যালার্ট" : "SMS Alerts"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold text-gray-700">
+                      {language === "bn" ? "অনলাইন সিভি" : "Digital CV & Profile"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold text-gray-700">
+                      {language === "bn" ? "নিরাপদ ডাটা" : "100% Data Safe"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
