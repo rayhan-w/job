@@ -234,42 +234,60 @@ export default function DashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">সহকারী পরিচালক</td>
-                    <td className="px-6 py-4">বাংলাদেশ সরকারি কর্ম কমিশন</td>
-                    <td className="px-6 py-4 text-xs text-gray-500">১০ জুন ২০২৬</td>
+                    <td className="px-6 py-4 font-bold text-gray-900">
+                      {language === "bn" ? "সহকারী পরিচালক" : "Assistant Director"}
+                    </td>
+                    <td className="px-6 py-4">
+                      {language === "bn" ? "বাংলাদেশ সরকারি কর্ম কমিশন" : "Bangladesh Public Service Commission"}
+                    </td>
+                    <td className="px-6 py-4 text-xs text-gray-500">
+                      {language === "bn" ? "১০ জুন ২০২৬" : "10 Jun 2026"}
+                    </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Applied
+                        {language === "bn" ? "আবেদন জমা হয়েছে" : "Applied"}
                       </span>
                     </td>
                   </tr>
                   <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">Software Engineer</td>
+                    <td className="px-6 py-4 font-bold text-gray-900">
+                      {language === "bn" ? "সফটওয়্যার ইঞ্জিনিয়ার" : "Software Engineer"}
+                    </td>
                     <td className="px-6 py-4">BRACNet</td>
-                    <td className="px-6 py-4 text-xs text-gray-500:">৪ জুন ২০২৬</td>
+                    <td className="px-6 py-4 text-xs text-gray-500">
+                      {language === "bn" ? "৪ জুন ২০২৬" : "04 Jun 2026"}
+                    </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        Viewed
+                        {language === "bn" ? "দেখা হয়েছে" : "Viewed"}
                       </span>
                     </td>
                   </tr>
                   <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">Probationary Officer</td>
+                    <td className="px-6 py-4 font-bold text-gray-900">
+                      {language === "bn" ? "প্রবেশনারি অফিসার" : "Probationary Officer"}
+                    </td>
                     <td className="px-6 py-4">Eastern Bank PLC</td>
-                    <td className="px-6 py-4 text-xs text-gray-500">৩ জুন ২০২৬</td>
+                    <td className="px-6 py-4 text-xs text-gray-500">
+                      {language === "bn" ? "৩ জুন ২০২৬" : "03 Jun 2026"}
+                    </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        Shortlisted
+                        {language === "bn" ? "শর্টলিস্টেড" : "Shortlisted"}
                       </span>
                     </td>
                   </tr>
                   <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">Program Officer</td>
+                    <td className="px-6 py-4 font-bold text-gray-900">
+                      {language === "bn" ? "প্রোগ্রাম অফিসার" : "Program Officer"}
+                    </td>
                     <td className="px-6 py-4">Save the Children</td>
-                    <td className="px-6 py-4 text-xs text-gray-500">১ জুন ২০২৬</td>
+                    <td className="px-6 py-4 text-xs text-gray-500">
+                      {language === "bn" ? "১ জুন ২০২৬" : "01 Jun 2026"}
+                    </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                        Interview Called
+                        {language === "bn" ? "ইন্টারভিউতে ডাকা হয়েছে" : "Interview Called"}
                       </span>
                     </td>
                   </tr>

@@ -41,19 +41,22 @@ export default function QuizPage() {
   const handleBuyAndStart = async () => {
     setErrorMsg(null);
     try {
-      // Find package
       const res = await fetch("/api/quiz/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packageId: "mock-or-seed" }),
       });
-      // In real scenario, use first package
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || "প্যাকেজ কিনতে ব্যর্থ হয়েছে। আপনার ওয়ালেট ব্যালেন্স চেক করুন।");
+        setErrorMsg(
+          data.error ||
+            (language === "bn"
+              ? "প্যাকেজ কিনতে ব্যর্থ হয়েছে। আপনার ওয়ালেট ব্যালেন্স চেক করুন।"
+              : "Failed to purchase package. Please check your wallet balance.")
+        );
       }
     } catch {
-      setErrorMsg("সার্ভার এরর");
+      setErrorMsg(language === "bn" ? "সার্ভার এরর" : "Server error");
     }
   };
 
@@ -76,37 +79,41 @@ export default function QuizPage() {
       {
         id: "q1",
         questionBn: "মুজিবনগর সরকার কোন তারিখে শপথ গ্রহণ করে?",
-        optionA: "১০ এপ্রিল ১৯৭১",
-        optionB: "১৭ এপ্রিল ১৯৭১",
-        optionC: "২৬ মার্চ ১৯৭১",
-        optionD: "১৬ ডিসেম্বর ১৯৭১",
+        questionEn: "On which date did the Mujibnagar Government take oath?",
+        optionA: language === "bn" ? "১০ এপ্রিল ১৯৭১" : "10 April 1971",
+        optionB: language === "bn" ? "১৭ এপ্রিল ১৯৭১" : "17 April 1971",
+        optionC: language === "bn" ? "২৬ মার্চ ১৯৭১" : "26 March 1971",
+        optionD: language === "bn" ? "১৬ ডিসেম্বর ১৯৭১" : "16 December 1971",
         correct: "B",
       },
       {
         id: "q2",
         questionBn: "বাংলাদেশের সংবিধান কবে গৃহীত হয়?",
-        optionA: "৪ নভেম্বর ১৯৭২",
-        optionB: "১৬ ডিসেম্বর ১৯৭২",
-        optionC: "২৬ মার্চ ১৯৭২",
-        optionD: "১০ জানুয়ারি ১৯৭২",
+        questionEn: "When was the Constitution of Bangladesh adopted?",
+        optionA: language === "bn" ? "৪ নভেম্বর ১৯৭২" : "4 November 1972",
+        optionB: language === "bn" ? "১৬ ডিসেম্বর ১৯৭২" : "16 December 1972",
+        optionC: language === "bn" ? "২৬ মার্চ ১৯৭২" : "26 March 1972",
+        optionD: language === "bn" ? "১০ জানুয়ারি ১৯৭২" : "10 January 1972",
         correct: "A",
       },
       {
         id: "q3",
         questionBn: "পদ্মা সেতুর মোট দৈর্ঘ্য কত কিলোমিটার?",
-        optionA: "৬.১৫ কিমি",
-        optionB: "৫.৮০ কিমি",
-        optionC: "৭.২০ কিমি",
-        optionD: "৬.৫০ কিমি",
+        questionEn: "What is the total length of the Padma Bridge in kilometers?",
+        optionA: language === "bn" ? "৬.১৫ কিমি" : "6.15 km",
+        optionB: language === "bn" ? "৫.৮০ কিমি" : "5.80 km",
+        optionC: language === "bn" ? "৭.২০ কিমি" : "7.20 km",
+        optionD: language === "bn" ? "৬.৫০ কিমি" : "6.50 km",
         correct: "A",
       },
       {
         id: "q4",
         questionBn: "জাতীয় স্মৃতিসৌধের স্থপতি কে?",
-        optionA: "সৈয়দ মাইনুল হোসেন",
-        optionB: "হামিদুর রহমান",
-        optionC: "মাজহারুল ইসলাম",
-        optionD: "এফ আর খান",
+        questionEn: "Who is the architect of the National Martyrs' Memorial?",
+        optionA: language === "bn" ? "সৈয়দ মাইনুল হোসেন" : "Syed Mainul Hossain",
+        optionB: language === "bn" ? "হামিদুর রহমান" : "Hamidur Rahman",
+        optionC: language === "bn" ? "মাজহারুল ইসলাম" : "Muzharul Islam",
+        optionD: language === "bn" ? "এফ আর খান" : "F R Khan",
         correct: "A",
       },
     ]);
@@ -130,7 +137,6 @@ export default function QuizPage() {
 
     const passedBonus = correct >= samplePackage.targetScore;
 
-    // Simulate result or call backend
     setQuizResult({
       score: correct,
       total: quizQuestions.length,
@@ -147,12 +153,12 @@ export default function QuizPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-            {language === "bn" ? "কুইজ প্রতিযোগিতা ও বোনাস পুরস্কার" : "Quiz Competition & Bonus Rewards"}
+            {language === "bn" ? "কুইজ প্রতিযোগিতা ও বোনাস পুরস্কার" : "Quiz Contest & Bonus Rewards"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {language === "bn"
               ? "ওয়ালেট থেকে ফি দিয়ে কুইজে অংশ নিন এবং টার্গেট স্কোর অর্জন করলেই নগদ বোনাস জিতুন!"
-              : "Buy packages from your wallet and win instant cash bonuses upon reaching the target score!"}
+              : "Participate in quiz with wallet balance and win instant cash bonuses upon reaching target score!"}
           </p>
         </div>
 
@@ -189,8 +195,14 @@ export default function QuizPage() {
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-emerald-100 shadow-xl space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div>
-              <h2 className="text-lg font-black text-gray-900">{samplePackage.nameBn}</h2>
-              <p className="text-xs text-gray-500">টার্গেট স্কোর: {samplePackage.targetScore} (বোনাস: ৳{samplePackage.bonusAmount})</p>
+              <h2 className="text-lg font-black text-gray-900">
+                {language === "bn" ? samplePackage.nameBn : samplePackage.nameEn}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {language === "bn"
+                  ? `টার্গেট স্কোর: ${samplePackage.targetScore} (বোনাস: ৳${samplePackage.bonusAmount})`
+                  : `Target Score: ${samplePackage.targetScore} (Bonus: ৳${samplePackage.bonusAmount})`}
+              </p>
             </div>
 
             {/* Countdown timer */}
@@ -210,7 +222,7 @@ export default function QuizPage() {
                     <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs flex items-center justify-center shrink-0">
                       {qIndex + 1}
                     </span>
-                    <span>{q.questionBn}</span>
+                    <span>{language === "bn" ? q.questionBn : q.questionEn}</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
@@ -244,7 +256,9 @@ export default function QuizPage() {
                 disabled={isSubmitting}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-sm transition shadow-md"
               >
-                {isSubmitting ? "ফলাফল হিসাব করা হচ্ছে..." : "কুইজ জমা দিন (Submit Quiz)"}
+                {isSubmitting
+                  ? (language === "bn" ? "ফলাফল হিসাব করা হচ্ছে..." : "Evaluating score...")
+                  : (language === "bn" ? "কুইজ জমা দিন (Submit Quiz)" : "Submit Quiz")}
               </button>
             </div>
           ) : (
@@ -258,16 +272,23 @@ export default function QuizPage() {
               </div>
 
               <h3 className="text-2xl font-black text-gray-900">
-                {quizResult.bonusAwarded ? "অভিনন্দন! আপনি জিতেছেন!" : "কুইজ সম্পন্ন হয়েছে"}
+                {quizResult.bonusAwarded
+                  ? (language === "bn" ? "অভিনন্দন! আপনি জিতেছেন!" : "Congratulations! You Won!")
+                  : (language === "bn" ? "কুইজ সম্পন্ন হয়েছে" : "Quiz Finished")}
               </h3>
 
               <div className="text-sm text-gray-600">
-                আপনার স্কোর: <span className="font-bold text-gray-900">{quizResult.score} / {quizResult.total}</span>
+                {language === "bn" ? "আপনার স্কোর:" : "Your Score:"}{" "}
+                <span className="font-bold text-gray-900">
+                  {quizResult.score} / {quizResult.total}
+                </span>
               </div>
 
               {quizResult.bonusAwarded && (
                 <div className="p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 font-semibold text-sm max-w-md mx-auto">
-                  🎉 টার্গেট স্কোর অর্জন করায় আপনার ওয়ালেটে ৳ {quizResult.bonusAmount} বোনাস যোগ হয়েছে!
+                  🎉 {language === "bn"
+                    ? `টার্গেট স্কোর অর্জন করায় আপনার ওয়ালেটে ৳ ${quizResult.bonusAmount} বোনাস যোগ হয়েছে!`
+                    : `Target score achieved! ৳ ${quizResult.bonusAmount} bonus added to your wallet!`}
                 </div>
               )}
 
@@ -279,7 +300,7 @@ export default function QuizPage() {
                 }}
                 className="bg-gray-900 text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-gray-800 transition"
               >
-                প্যাকেজ তালিকায় ফিরে যান
+                {language === "bn" ? "প্যাকেজ তালিকায় ফিরে যান" : "Back to Packages"}
               </button>
             </div>
           )}
@@ -293,28 +314,36 @@ export default function QuizPage() {
             <div>
               <div className="flex items-start justify-between">
                 <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200">
-                  সক্রিয় প্রতিযোগিতা
+                  {language === "bn" ? "সক্রিয় প্রতিযোগিতা" : "Active Contest"}
                 </span>
                 <span className="font-black text-emerald-600 text-lg">৳ {samplePackage.price}</span>
               </div>
 
               <h3 className="mt-4 font-black text-gray-900 text-lg leading-tight">
-                {samplePackage.nameBn}
+                {language === "bn" ? samplePackage.nameBn : samplePackage.nameEn}
               </h3>
-              <p className="text-xs text-gray-500 mt-1">৫০ প্রশ্ন | ৩০ মিনিট | নেগেটিভ মার্কিং</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {language === "bn" ? "৫০ প্রশ্ন | ৩০ মিনিট | নেগেটিভ মার্কিং" : "50 Questions | 30 Mins | Negative Marking"}
+              </p>
 
               <div className="mt-5 space-y-2 text-xs text-gray-600 border-t border-gray-100 pt-4">
                 <div className="flex items-center justify-between">
-                  <span>টার্গেট স্কোর:</span>
-                  <span className="font-bold text-gray-900">{samplePackage.targetScore} পয়েন্ট</span>
+                  <span>{language === "bn" ? "টার্গেট স্কোর:" : "Target Score:"}</span>
+                  <span className="font-bold text-gray-900">
+                    {samplePackage.targetScore} {language === "bn" ? "পয়েন্ট" : "points"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>বোনাস পুরস্কার:</span>
-                  <span className="font-bold text-emerald-600">৳ {samplePackage.bonusAmount} ক্যাশ</span>
+                  <span>{language === "bn" ? "বোনাস পুরস্কার:" : "Bonus Reward:"}</span>
+                  <span className="font-bold text-emerald-600">
+                    ৳ {samplePackage.bonusAmount} {language === "bn" ? "ক্যাশ" : "Cash"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>সময়:</span>
-                  <span className="font-bold text-gray-900">{samplePackage.timeLimitMinutes} মিনিট</span>
+                  <span>{language === "bn" ? "সময়:" : "Duration:"}</span>
+                  <span className="font-bold text-gray-900">
+                    {samplePackage.timeLimitMinutes} {language === "bn" ? "মিনিট" : "Mins"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -324,7 +353,7 @@ export default function QuizPage() {
               className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl text-sm transition shadow-sm flex items-center justify-center gap-2"
             >
               <Play className="w-4 h-4 fill-white" />
-              <span>কুইজ শুরু করুন</span>
+              <span>{language === "bn" ? "কুইজ শুরু করুন" : "Start Quiz"}</span>
             </button>
           </div>
         </div>
@@ -336,20 +365,28 @@ export default function QuizPage() {
           <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
             <div className="flex items-center gap-3">
               <Trophy className="w-6 h-6 text-amber-500" />
-              <h3 className="font-black text-gray-900 text-base">শীর্ষস্থান অর্জনকারী (Leaderboard)</h3>
+              <h3 className="font-black text-gray-900 text-base">
+                {language === "bn" ? "শীর্ষস্থান অর্জনকারী (Leaderboard)" : "Top Scorers (Leaderboard)"}
+              </h3>
             </div>
-            <span className="text-xs font-bold text-gray-500">সাধারণ জ্ঞান</span>
+            <span className="text-xs font-bold text-gray-500">
+              {language === "bn" ? "সাধারণ জ্ঞান" : "General Knowledge"}
+            </span>
           </div>
 
           <div className="divide-y divide-gray-100">
             <div className="p-4 flex items-center justify-between hover:bg-gray-50">
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center">
-                  ১
+                  1
                 </span>
                 <div>
-                  <div className="font-bold text-gray-900 text-sm">মেহেদী হাসান</div>
-                  <div className="text-xs text-gray-400">ঢাকা জেলা</div>
+                  <div className="font-bold text-gray-900 text-sm">
+                    {language === "bn" ? "মেহেদী হাসান" : "Mehedi Hasan"}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {language === "bn" ? "ঢাকা জেলা" : "Dhaka District"}
+                  </div>
                 </div>
               </div>
               <span className="font-black text-emerald-600 text-base">98%</span>
@@ -358,11 +395,15 @@ export default function QuizPage() {
             <div className="p-4 flex items-center justify-between hover:bg-gray-50">
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-full bg-gray-200 text-gray-800 font-black text-xs flex items-center justify-center">
-                  ২
+                  2
                 </span>
                 <div>
-                  <div className="font-bold text-gray-900 text-sm">রাহিমা আক্তার</div>
-                  <div className="text-xs text-gray-400">চট্টগ্রাম জেলা</div>
+                  <div className="font-bold text-gray-900 text-sm">
+                    {language === "bn" ? "রাহিমা আক্তার" : "Rahima Akter"}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {language === "bn" ? "চট্টগ্রাম জেলা" : "Chattogram District"}
+                  </div>
                 </div>
               </div>
               <span className="font-black text-emerald-600 text-base">96%</span>
@@ -371,11 +412,15 @@ export default function QuizPage() {
             <div className="p-4 flex items-center justify-between hover:bg-gray-50">
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-full bg-amber-700 text-white font-black text-xs flex items-center justify-center">
-                  ৩
+                  3
                 </span>
                 <div>
-                  <div className="font-bold text-gray-900 text-sm">রাহাতুল ইসলাম</div>
-                  <div className="text-xs text-gray-400">ঢাকা জেলা</div>
+                  <div className="font-bold text-gray-900 text-sm">
+                    {language === "bn" ? "রাহাতুল ইসলাম" : "Rahatul Islam"}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {language === "bn" ? "ঢাকা জেলা" : "Dhaka District"}
+                  </div>
                 </div>
               </div>
               <span className="font-black text-emerald-600 text-base">94%</span>

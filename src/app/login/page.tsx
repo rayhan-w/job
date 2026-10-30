@@ -109,14 +109,14 @@ export default function LoginPage() {
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2"
           >
             <LogIn className="w-4 h-4" />
-            <span>{loading ? "লগইন হচ্ছে..." : language === "bn" ? "লগইন করুন" : "Sign In"}</span>
+            <span>{loading ? (language === "bn" ? "লগইন হচ্ছে..." : "Signing in...") : (language === "bn" ? "লগইন করুন" : "Sign In")}</span>
           </button>
         </form>
 
         {/* Quick Test Accounts Filler */}
         <div className="pt-4 border-t border-gray-100">
           <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 text-center">
-            টেস্ট অ্যাকাউন্ট (১-ক্লিক সিলেক্ট):
+            {language === "bn" ? "টেস্ট অ্যাকাউন্ট (১-ক্লিক সিলেক্ট):" : "Test Accounts (1-Click Select):"}
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
@@ -124,28 +124,28 @@ export default function LoginPage() {
               onClick={() => quickFill("01712345678", "User@123456")}
               className="p-2 bg-emerald-50 text-emerald-800 rounded-lg font-semibold hover:bg-emerald-100 transition text-left"
             >
-              👤 ক্যান্ডিডেট (রাহাতুল)
+              👤 {language === "bn" ? "ক্যান্ডিডেট (রাহাতুল)" : "Candidate (Rahatul)"}
             </button>
             <button
               type="button"
               onClick={() => quickFill("01700000001", "Admin@123456")}
               className="p-2 bg-purple-50 text-purple-800 rounded-lg font-semibold hover:bg-purple-100 transition text-left"
             >
-              🛡️ Super Admin
+              🛡️ {language === "bn" ? "সুপার অ্যাডমিন" : "Super Admin"}
             </button>
             <button
               type="button"
               onClick={() => quickFill("01700000002", "Staff@123456")}
               className="p-2 bg-blue-50 text-blue-800 rounded-lg font-semibold hover:bg-blue-100 transition text-left"
             >
-              👮 Job Moderator Staff
+              👮 {language === "bn" ? "জব মডারেটর স্টাফ" : "Job Moderator Staff"}
             </button>
             <button
               type="button"
               onClick={() => quickFill("01700000021", "Agent@123456")}
               className="p-2 bg-amber-50 text-amber-800 rounded-lg font-semibold hover:bg-amber-100 transition text-left"
             >
-              💼 Agent (Dhaka)
+              💼 {language === "bn" ? "এজেন্ট (ঢাকা)" : "Agent (Dhaka)"}
             </button>
           </div>
         </div>

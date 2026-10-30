@@ -20,13 +20,10 @@ import {
 export default function AdminPage() {
   const { language } = useLanguage();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "cash-in" | "cash-out" | "users" | "commission" | "roles" | "audit">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "commission" | "users">("overview");
 
   // Data states
   const [reportData, setReportData] = useState<any>(null);
-  const [cashInRequests, setCashInRequests] = useState<any[]>([]);
-  const [cashOutRequests, setCashOutRequests] = useState<any[]>([]);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [commissionSettings, setCommissionSettings] = useState<any>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -67,10 +64,10 @@ export default function AdminPage() {
         window.location.href = "/dashboard";
       } else {
         const d = await res.json();
-        alert(d.error || "Failed to login as user");
+        alert(d.error || (language === "bn" ? "ইউজার লগইন ব্যর্থ হয়েছে" : "Failed to login as user"));
       }
     } catch {
-      alert("Network error");
+      alert(language === "bn" ? "নেটওয়ার্ক এরর" : "Network error");
     }
   };
 
@@ -82,7 +79,11 @@ export default function AdminPage() {
         body: JSON.stringify({ globalEnabled: enabled }),
       });
       if (res.ok) {
-        setActionMessage(`Global commission is now ${enabled ? "ON" : "OFF"}`);
+        setActionMessage(
+          language === "bn"
+            ? `গ্লোবাল কমিশন এখন ${enabled ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}`
+            : `Global commission is now ${enabled ? "ON" : "OFF"}`
+        );
         fetchAdminData();
       }
     } catch {
@@ -98,7 +99,11 @@ export default function AdminPage() {
         body: JSON.stringify({ agentId, agentCommissionActive: !currentStatus }),
       });
       if (res.ok) {
-        setActionMessage("Agent commission status updated!");
+        setActionMessage(
+          language === "bn"
+            ? "এজেন্ট কমিশন স্ট্যাটাস আপডেট হয়েছে!"
+            : "Agent commission status updated!"
+        );
         fetchAdminData();
       }
     } catch {
@@ -116,13 +121,17 @@ export default function AdminPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight">Super Admin & Control Panel</h1>
+              <h1 className="text-2xl font-black tracking-tight">
+                {language === "bn" ? "সুপার অ্যাডমিন ও কন্ট্রোল প্যানেল" : "Super Admin & Control Panel"}
+              </h1>
               <span className="text-xs bg-amber-400 text-slate-950 font-bold px-2.5 py-0.5 rounded-full uppercase">
                 {currentUser?.role || "SUPER_ADMIN"}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              মাস্টার কন্ট্রোল: ভূমিকা, অনুমতি, ইমপারসোনেশন, কমিশন, ও লেজার রিকনসিলিয়েশন
+              {language === "bn"
+                ? "মাস্টার কন্ট্রোল: ভূমিকা, অনুমতি, ইমপারসোনেশন, কমিশন, ও লেজার রিকনসিলিয়েশন"
+                : "Master Control: Roles, Permissions, Impersonation, Commission & Ledger Reconciliation"}
             </p>
           </div>
         </div>
@@ -135,7 +144,7 @@ export default function AdminPage() {
               activeTab === "overview" ? "bg-white text-slate-900" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
             }`}
           >
-            ওভারভিউ ও রিপোর্টস
+            {language === "bn" ? "ওভারভিউ ও রিপোর্টস" : "Overview & Reports"}
           </button>
           <button
             onClick={() => setActiveTab("commission")}
@@ -143,7 +152,7 @@ export default function AdminPage() {
               activeTab === "commission" ? "bg-white text-slate-900" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
             }`}
           >
-            কমিশন কন্ট্রোল
+            {language === "bn" ? "কমিশন কন্ট্রোল" : "Commission Control"}
           </button>
           <button
             onClick={() => setActiveTab("users")}
@@ -151,7 +160,7 @@ export default function AdminPage() {
               activeTab === "users" ? "bg-white text-slate-900" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
             }`}
           >
-            ইউজার ও লগইন-অ্যাজ
+            {language === "bn" ? "ইউজার ও লগইন-অ্যাজ" : "Users & Login-As"}
           </button>
         </div>
       </div>
@@ -182,37 +191,45 @@ export default function AdminPage() {
               <div>
                 <h3 className="font-bold text-gray-900 text-base">
                   {reportData?.reconciliation?.passed
-                    ? "লেজার রিকনসিলিয়েশন সফল (Reconciliation Passed ✓)"
-                    : "লেজার রিকনসিলিয়েশন স্টেটাস"}
+                    ? (language === "bn" ? "লেজার রিকনসিলিয়েশন সফল (Reconciliation Passed ✓)" : "Ledger Reconciliation Passed ✓")
+                    : (language === "bn" ? "লেজার রিকনসিলিয়েশন স্টেটাস" : "Reconciliation Status")}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  মোট ইউজার ব্যালেন্স: ৳ {reportData?.reconciliation?.totalUserBalances?.toLocaleString() || "0"} |
-                  মোট লেজার এন্ট্রি: ৳ {reportData?.reconciliation?.sumLedgerCredits?.toLocaleString() || "0"}
+                  {language === "bn" ? "মোট ইউজার ব্যালেন্স:" : "Total User Balances:"} ৳ {reportData?.reconciliation?.totalUserBalances?.toLocaleString() || "0"} |{" "}
+                  {language === "bn" ? "মোট লেজার এন্ট্রি:" : "Total Ledger Credits:"} ৳ {reportData?.reconciliation?.sumLedgerCredits?.toLocaleString() || "0"}
                 </p>
               </div>
             </div>
 
             <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-              ১০০% ব্যালেন্স ভেরিফাইড
+              {language === "bn" ? "১০০% ব্যালেন্স ভেরিফাইড" : "100% Balance Verified"}
             </span>
           </div>
 
           {/* Metrics Counters */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="text-xs text-gray-400 font-semibold uppercase">মোট চাকরির বিজ্ঞপ্তি</div>
+              <div className="text-xs text-gray-400 font-semibold uppercase">
+                {language === "bn" ? "মোট চাকরির বিজ্ঞপ্তি" : "Total Job Circulars"}
+              </div>
               <div className="text-2xl font-black text-gray-900 mt-1">{reportData?.metrics?.totalJobs || 4}</div>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="text-xs text-gray-400 font-semibold uppercase">মোট আবেদন জমা</div>
+              <div className="text-xs text-gray-400 font-semibold uppercase">
+                {language === "bn" ? "মোট আবেদন জমা" : "Total Applications"}
+              </div>
               <div className="text-2xl font-black text-gray-900 mt-1">{reportData?.metrics?.totalApplications || 12}</div>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="text-xs text-gray-400 font-semibold uppercase">মোট রেজিস্টার্ড ইউজার</div>
+              <div className="text-xs text-gray-400 font-semibold uppercase">
+                {language === "bn" ? "মোট রেজিস্টার্ড ইউজার" : "Total Registered Users"}
+              </div>
               <div className="text-2xl font-black text-gray-900 mt-1">{reportData?.metrics?.totalUsers || 9}</div>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="text-xs text-gray-400 font-semibold uppercase">মোট কমিশন পেইড</div>
+              <div className="text-xs text-gray-400 font-semibold uppercase">
+                {language === "bn" ? "মোট কমিশন পেইড" : "Total Commission Paid"}
+              </div>
               <div className="text-2xl font-black text-emerald-600 mt-1">
                 ৳ {reportData?.metrics?.totalCommissions?.toLocaleString() || "1,500"}
               </div>
@@ -226,8 +243,14 @@ export default function AdminPage() {
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div>
-              <h2 className="text-lg font-black text-gray-900">গ্লোবাল ও এজেন্ট কমিশন কনফিগারেশন</h2>
-              <p className="text-xs text-gray-500">সকল পারসেন্টেজ ও অন/অফ সুইচ সুপার অ্যাডমিন নিয়ন্ত্রণাধীন</p>
+              <h2 className="text-lg font-black text-gray-900">
+                {language === "bn" ? "গ্লোবাল ও এজেন্ট কমিশন কনফিগারেশন" : "Global & Agent Commission Settings"}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {language === "bn"
+                  ? "সকল পারসেন্টেজ ও অন/অফ সুইচ সুপার অ্যাডমিন নিয়ন্ত্রণাধীন"
+                  : "All percentages and toggles controlled by Super Admin"}
+              </p>
             </div>
 
             <button
@@ -238,7 +261,9 @@ export default function AdminPage() {
                   : "bg-red-600 text-white hover:bg-red-700"
               }`}
             >
-              গ্লোবাল কমিশন: {commissionSettings?.globalEnabled ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
+              {language === "bn"
+                ? `গ্লোবাল কমিশন: ${commissionSettings?.globalEnabled ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}`
+                : `Global Commission: ${commissionSettings?.globalEnabled ? "Active (ON)" : "Disabled (OFF)"}`}
             </button>
           </div>
 
@@ -247,11 +272,11 @@ export default function AdminPage() {
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-4">এজেন্টের নাম</th>
-                  <th className="px-6 py-4">রেফারেল কোড</th>
-                  <th className="px-6 py-4">কমিশন রেট (%)</th>
-                  <th className="px-6 py-4">স্ট্যাটাস</th>
-                  <th className="px-6 py-4">অ্যাকশন</th>
+                  <th className="px-6 py-4">{language === "bn" ? "এজেন্টের নাম" : "Agent Name"}</th>
+                  <th className="px-6 py-4">{language === "bn" ? "রেফারেল কোড" : "Referral Code"}</th>
+                  <th className="px-6 py-4">{language === "bn" ? "কমিশন রেট (%)" : "Rate (%)"}</th>
+                  <th className="px-6 py-4">{language === "bn" ? "স্ট্যাটাস" : "Status"}</th>
+                  <th className="px-6 py-4">{language === "bn" ? "অ্যাকশন" : "Action"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -276,7 +301,9 @@ export default function AdminPage() {
                         onClick={() => handleToggleAgentCommission(agent.id, agent.commissionActive)}
                         className="text-xs font-bold px-3 py-1 rounded-lg border border-gray-300 hover:bg-gray-100 transition"
                       >
-                        {agent.commissionActive ? "কমিশন বন্ধ করুন" : "কমিশন চালু করুন"}
+                        {agent.commissionActive
+                          ? (language === "bn" ? "কমিশন বন্ধ করুন" : "Disable Commission")
+                          : (language === "bn" ? "কমিশন চালু করুন" : "Enable Commission")}
                       </button>
                     </td>
                   </tr>
@@ -292,9 +319,13 @@ export default function AdminPage() {
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div>
-              <h2 className="text-lg font-black text-gray-900">ব্যবহারকারী তালিকা ও প্যানেল ইমপারসোনেশন</h2>
+              <h2 className="text-lg font-black text-gray-900">
+                {language === "bn" ? "ব্যবহারকারী তালিকা ও প্যানেল ইমপারসোনেশন" : "User List & Login-As Impersonation"}
+              </h2>
               <p className="text-xs text-gray-500">
-                যেকোনো ব্যবহারকারীর প্যানেলে সরাসরি ১-ক্লিকে "Login As" দিয়ে প্রবেশ করুন
+                {language === "bn"
+                  ? 'যেকোনো ব্যবহারকারীর প্যানেলে সরাসরি ১-ক্লিকে "Login As" দিয়ে প্রবেশ করুন'
+                  : 'Instantly view any user dashboard with 1-click "Login As"'}
               </p>
             </div>
           </div>
@@ -303,8 +334,12 @@ export default function AdminPage() {
             {/* Sample User Cards for 1-click Impersonate */}
             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between">
               <div>
-                <div className="font-bold text-gray-900 text-sm">রাহাতুল ইসলাম (ক্যান্ডিডেট)</div>
-                <div className="text-xs text-gray-500">ফোন: 01712345678 | রোল: CUSTOMER</div>
+                <div className="font-bold text-gray-900 text-sm">
+                  {language === "bn" ? "রাহাতুল ইসলাম (ক্যান্ডিডেট)" : "Rahatul Islam (Candidate)"}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {language === "bn" ? "ফোন:" : "Phone:"} 01712345678 | {language === "bn" ? "রোল:" : "Role:"} CUSTOMER
+                </div>
               </div>
               <button
                 onClick={() => handleImpersonate("seeded-customer-id")}
@@ -317,8 +352,12 @@ export default function AdminPage() {
 
             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between">
               <div>
-                <div className="font-bold text-gray-900 text-sm">মো: হাসানুর রহমান (এজেন্ট)</div>
-                <div className="text-xs text-gray-500">ফোন: 01700000021 | রোল: AGENT</div>
+                <div className="font-bold text-gray-900 text-sm">
+                  {language === "bn" ? "মো: হাসানুর রহমান (এজেন্ট)" : "Md. Hasanur Rahman (Agent)"}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {language === "bn" ? "ফোন:" : "Phone:"} 01700000021 | {language === "bn" ? "রোল:" : "Role:"} AGENT
+                </div>
               </div>
               <button
                 onClick={() => handleImpersonate("seeded-agent-id")}

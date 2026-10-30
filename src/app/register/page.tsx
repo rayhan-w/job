@@ -146,7 +146,9 @@ function RegisterContent() {
             </div>
             {!refCode && (
               <p className="text-[11px] text-gray-400 mt-1">
-                * কোনো কোড না দিলে স্বয়ংক্রিয়ভাবে সিস্টেমের ডিফল্ট এজেন্টের অধীনে যুক্ত হবেন।
+                {language === "bn"
+                  ? "* কোনো কোড না দিলে স্বয়ংক্রিয়ভাবে সিস্টেমের ডিফল্ট এজেন্টের অধীনে যুক্ত হবেন।"
+                  : "* Without a referral code, you will automatically be assigned under the default agent."}
               </p>
             )}
           </div>
@@ -156,7 +158,9 @@ function RegisterContent() {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition shadow-md"
           >
-            {loading ? "অ্যাকাউন্ট তৈরি হচ্ছে..." : language === "bn" ? "রেজিস্টার করুন" : "Register"}
+            {loading
+              ? (language === "bn" ? "অ্যাকাউন্ট তৈরি হচ্ছে..." : "Creating account...")
+              : (language === "bn" ? "রেজিস্টার করুন" : "Register")}
           </button>
         </form>
 

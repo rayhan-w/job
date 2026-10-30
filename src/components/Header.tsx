@@ -69,7 +69,7 @@ export function Header() {
                 Job<span className="text-emerald-600">Portal</span>
               </div>
               <div className="text-[11px] font-semibold text-gray-400 tracking-wider uppercase mt-1">
-                Your Career, Our Priority
+                {language === "bn" ? "আপনার ক্যারিয়ার, আমাদের অগ্রাধিকার" : "Your Career, Our Priority"}
               </div>
             </div>
           </Link>

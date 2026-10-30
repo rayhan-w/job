@@ -166,8 +166,10 @@ export default function ProfilePage() {
               </div>
 
               <div className="text-center sm:text-left space-y-1.5 flex-1">
-                <h2 className="text-xl font-black text-gray-900">{name || "রাহাতুল ইসলাম"}</h2>
-                <div className="text-xs font-semibold text-emerald-600">ক্যান্ডিডেট</div>
+                <h2 className="text-xl font-black text-gray-900">{name || (language === "bn" ? "রাহাতুল ইসলাম" : "Rahatul Islam")}</h2>
+                <div className="text-xs font-semibold text-emerald-600">
+                  {language === "bn" ? "ক্যান্ডিডেট" : "Candidate"}
+                </div>
                 <div className="pt-2 space-y-1 text-xs text-gray-500">
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Phone className="w-3.5 h-3.5 text-gray-400" />
@@ -179,7 +181,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{presentAddress || "ঢাকা, বাংলাদেশ"}</span>
+                    <span>{presentAddress || (language === "bn" ? "ঢাকা, বাংলাদেশ" : "Dhaka, Bangladesh")}</span>
                   </div>
                 </div>
               </div>
@@ -227,16 +229,16 @@ export default function ProfilePage() {
                 className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5"
               >
                 {saving ? (
-                  <span>সংরক্ষণ হচ্ছে...</span>
+                  <span>{language === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving..."}</span>
                 ) : saveSuccess ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    <span>সংরক্ষিত হয়েছে!</span>
+                    <span>{language === "bn" ? "সংরক্ষিত হয়েছে!" : "Saved Successfully!"}</span>
                   </>
                 ) : (
                   <>
                     <Save className="w-3.5 h-3.5" />
-                    <span>প্রোফাইল সম্পূর্ণ করুন</span>
+                    <span>{language === "bn" ? "প্রোফাইল সংরক্ষণ করুন" : "Save Profile"}</span>
                   </>
                 )}
               </button>

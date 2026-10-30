@@ -57,12 +57,12 @@ function JobsContent() {
       const res = await fetch(`/api/jobs/${jobId}/apply`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        setApplyResult({ id: jobId, text: "আবেদন সফল হয়েছে ✓" });
+        setApplyResult({ id: jobId, text: language === "bn" ? "আবেদন সফল হয়েছে ✓" : "Applied Successfully ✓" });
       } else {
-        setApplyResult({ id: jobId, text: data.error || "আবেদন ব্যর্থ হয়েছে", error: true });
+        setApplyResult({ id: jobId, text: data.error || (language === "bn" ? "আবেদন ব্যর্থ হয়েছে" : "Application failed"), error: true });
       }
     } catch {
-      setApplyResult({ id: jobId, text: "সার্ভার এরর", error: true });
+      setApplyResult({ id: jobId, text: language === "bn" ? "সার্ভার এরর" : "Server error", error: true });
     } finally {
       setApplyingJobId(null);
     }
@@ -95,10 +95,10 @@ function JobsContent() {
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none bg-white"
             >
               <option value="">{t("all_categories")}</option>
-              <option value="govt">সরকারি (Government)</option>
-              <option value="private">বেসরকারি (Private)</option>
-              <option value="ngo">এনজিও (NGO)</option>
-              <option value="bank">ব্যাংক (Bank)</option>
+              <option value="govt">{language === "bn" ? "সরকারি" : "Government"}</option>
+              <option value="private">{language === "bn" ? "বেসরকারি" : "Private"}</option>
+              <option value="ngo">{language === "bn" ? "এনজিও" : "NGO"}</option>
+              <option value="bank">{language === "bn" ? "ব্যাংক" : "Bank"}</option>
             </select>
           </div>
 
@@ -118,7 +118,7 @@ function JobsContent() {
         </div>
       ) : jobs.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center text-gray-500 border border-gray-100">
-          কোনো চাকরির সার্কুলার পাওয়া যায়নি।
+          {language === "bn" ? "কোনো চাকরির সার্কুলার পাওয়া যায়নি।" : "No job circulars found."}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -153,20 +153,20 @@ function JobsContent() {
 
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     <span className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                      {job.category?.nameBn}
+                      {language === "bn" ? job.category?.nameBn : job.category?.nameEn || job.category?.nameBn}
                     </span>
                     <span className="bg-blue-50 text-blue-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                      {job.jobType}
+                      {language === "bn" ? (job.jobType === "FULL_TIME" ? "ফুল-টাইম" : job.jobType === "CONTRACTUAL" ? "চুক্তিভিত্তিক" : job.jobType) : (job.jobType === "FULL_TIME" ? "Full-time" : job.jobType === "CONTRACTUAL" ? "Contractual" : job.jobType)}
                     </span>
                     <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                      পদসংখ্যা: {job.vacancy}
+                      {language === "bn" ? "পদসংখ্যা" : "Vacancy"}: {job.vacancy}
                     </span>
                   </div>
 
                   <div className="mt-4 space-y-1.5 text-xs text-gray-500">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{job.workplaceLocation || "ঢাকা"}</span>
+                      <span>{job.workplaceLocation || (language === "bn" ? "ঢাকা" : "Dhaka")}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-3.5 h-3.5 text-gray-400" />
@@ -174,7 +174,7 @@ function JobsContent() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>শেষ তারিখ: {new Date(job.deadline).toLocaleDateString()}</span>
+                      <span>{t("deadline")}: {new Date(job.deadline).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
@@ -185,7 +185,7 @@ function JobsContent() {
                     disabled={applyingJobId === job.id}
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2"
                   >
-                    <span>{applyingJobId === job.id ? "আবেদন হচ্ছে..." : t("apply_now")}</span>
+                    <span>{applyingJobId === job.id ? (language === "bn" ? "আবেদন হচ্ছে..." : "Applying...") : t("apply_now")}</span>
                   </button>
 
                   {applyResult && applyResult.id === job.id && (

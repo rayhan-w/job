@@ -124,10 +124,10 @@ export default function HomePage() {
                 className="w-full text-gray-700 text-sm bg-transparent focus:outline-none"
               >
                 <option value="">{t("all_districts")}</option>
-                <option value="1">ঢাকা (Dhaka)</option>
-                <option value="14">চট্টগ্রাম (Chattogram)</option>
-                <option value="25">রাজশাহী (Rajshahi)</option>
-                <option value="33">খুলনা (Khulna)</option>
+                <option value="1">{language === "bn" ? "ঢাকা" : "Dhaka"}</option>
+                <option value="14">{language === "bn" ? "চট্টগ্রাম" : "Chattogram"}</option>
+                <option value="25">{language === "bn" ? "রাজশাহী" : "Rajshahi"}</option>
+                <option value="33">{language === "bn" ? "খুলনা" : "Khulna"}</option>
               </select>
             </div>
 
@@ -273,10 +273,10 @@ export default function HomePage() {
                   {/* Badges: Category & Job Type */}
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     <span className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2 py-0.5 rounded">
-                      {job.category?.nameBn}
+                      {language === "bn" ? job.category?.nameBn : job.category?.nameEn || job.category?.nameBn}
                     </span>
                     <span className="bg-blue-50 text-blue-700 text-[11px] font-semibold px-2 py-0.5 rounded">
-                      {job.jobType}
+                      {language === "bn" ? (job.jobType === "FULL_TIME" ? "ফুল-টাইম" : job.jobType === "CONTRACTUAL" ? "চুক্তিভিত্তিক" : job.jobType) : (job.jobType === "FULL_TIME" ? "Full-time" : job.jobType === "CONTRACTUAL" ? "Contractual" : job.jobType)}
                     </span>
                   </div>
 
@@ -284,7 +284,7 @@ export default function HomePage() {
                   <div className="mt-4 space-y-1.5 text-xs text-gray-500">
                     <div className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{job.workplaceLocation || "ঢাকা"}</span>
+                      <span>{job.workplaceLocation || (language === "bn" ? "ঢাকা" : "Dhaka")}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-gray-400" />

@@ -74,7 +74,11 @@ export default function ReferralPage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center gap-2"
                 >
                   {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedCode ? "কপি হয়েছে!" : "কপি করুন"}</span>
+                  <span>
+                    {copiedCode
+                      ? (language === "bn" ? "কপি হয়েছে!" : "Copied!")
+                      : (language === "bn" ? "কপি করুন" : "Copy Code")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -95,7 +99,11 @@ export default function ReferralPage() {
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-sm transition shadow-sm flex items-center gap-2 shrink-0"
                 >
                   {copiedLink ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                  <span>{copiedLink ? "লিংক কপি হয়েছে!" : "লিংক কপি করুন"}</span>
+                  <span>
+                    {copiedLink
+                      ? (language === "bn" ? "লিংক কপি হয়েছে!" : "Link Copied!")
+                      : (language === "bn" ? "লিংক কপি করুন" : "Copy Link")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -108,8 +116,12 @@ export default function ReferralPage() {
                 <UserCheck className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">আমার এজেন্ট</div>
-                <div className="font-bold text-gray-900 text-base mt-0.5">মো: হাসানুর রহমান</div>
+                <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                  {language === "bn" ? "আমার এজেন্ট" : "My Agent"}
+                </div>
+                <div className="font-bold text-gray-900 text-base mt-0.5">
+                  {language === "bn" ? "মো: হাসানুর রহমান" : "Md. Hasanur Rahman"}
+                </div>
                 <div className="text-xs text-gray-500">+880 1700000021</div>
               </div>
             </div>
@@ -119,9 +131,15 @@ export default function ReferralPage() {
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">আমার চ্যানেল পার্টনার</div>
-                <div className="font-bold text-gray-900 text-base mt-0.5">ঢাকা চ্যানেল পার্টনার</div>
-                <div className="text-xs text-emerald-600 font-medium">ঢাকা জেলা (District Unique)</div>
+                <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                  {language === "bn" ? "আমার চ্যানেল পার্টনার" : "My Channel Partner"}
+                </div>
+                <div className="font-bold text-gray-900 text-base mt-0.5">
+                  {language === "bn" ? "ঢাকা চ্যানেল পার্টনার" : "Dhaka Channel Partner"}
+                </div>
+                <div className="text-xs text-emerald-600 font-medium">
+                  {language === "bn" ? "ঢাকা জেলা (District Unique)" : "Dhaka District (Unique)"}
+                </div>
               </div>
             </div>
           </div>
