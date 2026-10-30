@@ -86,12 +86,12 @@ export function DashboardSidebar({ userRole = "CUSTOMER" }: { userRole?: string 
     <aside className="w-full lg:w-64 bg-slate-900 text-slate-300 rounded-3xl p-5 flex flex-col justify-between shrink-0 shadow-xl">
       <div>
         <div className="flex items-center gap-3 px-3 py-4 border-b border-slate-800 mb-4">
-          <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center font-bold text-white text-lg">
-            JQ
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center font-bold text-white text-base shadow-md shadow-orange-500/20">
+            W
           </div>
           <div>
-            <div className="font-bold text-white text-base">JobPortal</div>
-            <div className="text-[11px] text-emerald-400 font-medium">Candidate Panel</div>
+            <div className="font-bold text-white text-base">WO<span className="text-orange-500">JOB</span></div>
+            <div className="text-[11px] text-orange-400 font-medium">Candidate Panel</div>
           </div>
         </div>
 
@@ -105,7 +105,7 @@ export function DashboardSidebar({ userRole = "CUSTOMER" }: { userRole?: string 
                 href={item.href}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${
                   isActive
-                    ? "bg-emerald-600 text-white font-semibold shadow-sm"
+                    ? "bg-orange-600 text-white font-semibold shadow-md shadow-orange-600/30"
                     : "hover:bg-slate-800 text-slate-400 hover:text-white"
                 }`}
               >

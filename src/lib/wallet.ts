@@ -46,35 +46,38 @@ export async function creditWallet({
 }) {
   if (amount <= 0) throw new Error("Credit amount must be greater than zero");
 
-  return await prisma.$transaction(async (tx) => {
-    const wallet = await tx.wallet.upsert({
-      where: { userId },
-      create: { userId, balance: 0.0, heldBalance: 0.0 },
-      update: {},
-    });
+  return await prisma.$transaction(
+    async (tx) => {
+      const wallet = await tx.wallet.upsert({
+        where: { userId },
+        create: { userId, balance: 0.0, heldBalance: 0.0 },
+        update: {},
+      });
 
-    const newBalance = wallet.balance + amount;
+      const newBalance = wallet.balance + amount;
 
-    await tx.wallet.update({
-      where: { id: wallet.id },
-      data: { balance: newBalance },
-    });
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: newBalance },
+      });
 
-    const transaction = await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type,
-        amount,
-        balanceAfter: newBalance,
-        referenceType,
-        referenceId,
-        note,
-        createdBy,
-      },
-    });
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type,
+          amount,
+          balanceAfter: newBalance,
+          referenceType,
+          referenceId,
+          note,
+          createdBy,
+        },
+      });
 
-    return { wallet, transaction, newBalance };
-  });
+      return { wallet, transaction, newBalance };
+    },
+    { maxWait: 20000, timeout: 30000 }
+  );
 }
 
 export async function debitWallet({
@@ -96,37 +99,40 @@ export async function debitWallet({
 }) {
   if (amount <= 0) throw new Error("Debit amount must be greater than zero");
 
-  return await prisma.$transaction(async (tx) => {
-    const wallet = await tx.wallet.findUnique({
-      where: { userId },
-    });
+  return await prisma.$transaction(
+    async (tx) => {
+      const wallet = await tx.wallet.findUnique({
+        where: { userId },
+      });
 
-    if (!wallet || wallet.balance < amount) {
-      throw new Error("Insufficient wallet balance");
-    }
+      if (!wallet || wallet.balance < amount) {
+        throw new Error("Insufficient wallet balance");
+      }
 
-    const newBalance = wallet.balance - amount;
+      const newBalance = wallet.balance - amount;
 
-    await tx.wallet.update({
-      where: { id: wallet.id },
-      data: { balance: newBalance },
-    });
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: newBalance },
+      });
 
-    const transaction = await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type,
-        amount: -amount,
-        balanceAfter: newBalance,
-        referenceType,
-        referenceId,
-        note,
-        createdBy,
-      },
-    });
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type,
+          amount: -amount,
+          balanceAfter: newBalance,
+          referenceType,
+          referenceId,
+          note,
+          createdBy,
+        },
+      });
 
-    return { wallet, transaction, newBalance };
-  });
+      return { wallet, transaction, newBalance };
+    },
+    { maxWait: 20000, timeout: 30000 }
+  );
 }
 
 export async function holdCashOut({
@@ -140,38 +146,41 @@ export async function holdCashOut({
   referenceId: string;
   createdBy?: string;
 }) {
-  return await prisma.$transaction(async (tx) => {
-    const wallet = await tx.wallet.findUnique({
-      where: { userId },
-    });
+  return await prisma.$transaction(
+    async (tx) => {
+      const wallet = await tx.wallet.findUnique({
+        where: { userId },
+      });
 
-    if (!wallet || wallet.balance < amount) {
-      throw new Error("Insufficient wallet balance to hold");
-    }
+      if (!wallet || wallet.balance < amount) {
+        throw new Error("Insufficient wallet balance to hold");
+      }
 
-    const newBalance = wallet.balance - amount;
-    const newHeld = wallet.heldBalance + amount;
+      const newBalance = wallet.balance - amount;
+      const newHeld = wallet.heldBalance + amount;
 
-    await tx.wallet.update({
-      where: { id: wallet.id },
-      data: { balance: newBalance, heldBalance: newHeld },
-    });
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: newBalance, heldBalance: newHeld },
+      });
 
-    const transaction = await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type: "CASH_OUT_HOLD",
-        amount: -amount,
-        balanceAfter: newBalance,
-        referenceType: "CashOutRequest",
-        referenceId,
-        note: `Held for cash-out request #${referenceId}`,
-        createdBy,
-      },
-    });
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: "CASH_OUT_HOLD",
+          amount: -amount,
+          balanceAfter: newBalance,
+          referenceType: "CashOutRequest",
+          referenceId,
+          note: `Held for cash-out request #${referenceId}`,
+          createdBy,
+        },
+      });
 
-    return { wallet, transaction };
-  });
+      return { wallet, transaction };
+    },
+    { maxWait: 20000, timeout: 30000 }
+  );
 }
 
 export async function releaseCashOutHold({
@@ -185,38 +194,41 @@ export async function releaseCashOutHold({
   referenceId: string;
   createdBy?: string;
 }) {
-  return await prisma.$transaction(async (tx) => {
-    const wallet = await tx.wallet.findUnique({
-      where: { userId },
-    });
+  return await prisma.$transaction(
+    async (tx) => {
+      const wallet = await tx.wallet.findUnique({
+        where: { userId },
+      });
 
-    if (!wallet || wallet.heldBalance < amount) {
-      throw new Error("Invalid held balance state");
-    }
+      if (!wallet || wallet.heldBalance < amount) {
+        throw new Error("Invalid held balance state");
+      }
 
-    const newBalance = wallet.balance + amount;
-    const newHeld = wallet.heldBalance - amount;
+      const newBalance = wallet.balance + amount;
+      const newHeld = wallet.heldBalance - amount;
 
-    await tx.wallet.update({
-      where: { id: wallet.id },
-      data: { balance: newBalance, heldBalance: newHeld },
-    });
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: newBalance, heldBalance: newHeld },
+      });
 
-    const transaction = await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type: "CASH_OUT_RELEASE",
-        amount: amount,
-        balanceAfter: newBalance,
-        referenceType: "CashOutRequest",
-        referenceId,
-        note: `Released held balance from rejected cash-out #${referenceId}`,
-        createdBy,
-      },
-    });
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: "CASH_OUT_RELEASE",
+          amount: amount,
+          balanceAfter: newBalance,
+          referenceType: "CashOutRequest",
+          referenceId,
+          note: `Released held balance from rejected cash-out #${referenceId}`,
+          createdBy,
+        },
+      });
 
-    return { wallet, transaction };
-  });
+      return { wallet, transaction };
+    },
+    { maxWait: 20000, timeout: 30000 }
+  );
 }
 
 export async function completeCashOutPayout({
@@ -230,35 +242,38 @@ export async function completeCashOutPayout({
   referenceId: string;
   createdBy?: string;
 }) {
-  return await prisma.$transaction(async (tx) => {
-    const wallet = await tx.wallet.findUnique({
-      where: { userId },
-    });
+  return await prisma.$transaction(
+    async (tx) => {
+      const wallet = await tx.wallet.findUnique({
+        where: { userId },
+      });
 
-    if (!wallet || wallet.heldBalance < amount) {
-      throw new Error("Invalid held balance state for payout");
-    }
+      if (!wallet || wallet.heldBalance < amount) {
+        throw new Error("Invalid held balance state for payout");
+      }
 
-    const newHeld = wallet.heldBalance - amount;
+      const newHeld = wallet.heldBalance - amount;
 
-    await tx.wallet.update({
-      where: { id: wallet.id },
-      data: { heldBalance: newHeld },
-    });
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { heldBalance: newHeld },
+      });
 
-    const transaction = await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        type: "CASH_OUT_DEDUCT",
-        amount: 0,
-        balanceAfter: wallet.balance,
-        referenceType: "CashOutRequest",
-        referenceId,
-        note: `Completed payout for cash-out #${referenceId}`,
-        createdBy,
-      },
-    });
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: "CASH_OUT_DEDUCT",
+          amount: 0,
+          balanceAfter: wallet.balance,
+          referenceType: "CashOutRequest",
+          referenceId,
+          note: `Completed payout for cash-out #${referenceId}`,
+          createdBy,
+        },
+      });
 
-    return { wallet, transaction };
-  });
+      return { wallet, transaction };
+    },
+    { maxWait: 20000, timeout: 30000 }
+  );
 }

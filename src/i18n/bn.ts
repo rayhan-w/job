@@ -43,8 +43,8 @@ export const bn = {
   // Categories
   cat_govt: "সরকারি",
   cat_private: "বেসরকারি",
-  cat_ngo: "এনজিও",
-  cat_bank: "ব্যাংক",
+  cat_krishi: "কৃষি",
+  cat_motso: "মৎস্য",
   cat_others: "অন্যান্য",
 
   // Jobs

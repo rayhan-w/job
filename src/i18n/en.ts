@@ -43,8 +43,8 @@ export const en = {
   // Categories
   cat_govt: "Government",
   cat_private: "Private",
-  cat_ngo: "NGO",
-  cat_bank: "Bank",
+  cat_krishi: "Agriculture",
+  cat_motso: "Fisheries",
   cat_others: "Others",
 
   // Jobs

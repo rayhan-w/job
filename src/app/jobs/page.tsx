@@ -84,7 +84,7 @@ function JobsContent() {
               placeholder={t("hero_search_placeholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-orange-500 focus:outline-none"
             />
           </div>
 
@@ -92,19 +92,21 @@ function JobsContent() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none bg-white"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-orange-500 focus:outline-none bg-white"
             >
               <option value="">{t("all_categories")}</option>
               <option value="govt">{language === "bn" ? "সরকারি" : "Government"}</option>
               <option value="private">{language === "bn" ? "বেসরকারি" : "Private"}</option>
-              <option value="ngo">{language === "bn" ? "এনজিও" : "NGO"}</option>
-              <option value="bank">{language === "bn" ? "ব্যাংক" : "Bank"}</option>
+              <option value="krishi">{language === "bn" ? "কৃষি" : "Agriculture"}</option>
+              <option value="motso">{language === "bn" ? "মৎস্য" : "Fisheries"}</option>
+              <option value="it">{language === "bn" ? "তথ্যপ্রযুক্তি" : "Technology & IT"}</option>
+              <option value="others">{language === "bn" ? "অন্যান্য" : "Others"}</option>
             </select>
           </div>
 
           <button
             type="submit"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition shadow-sm"
+            className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition shadow-sm"
           >
             {t("search_btn")}
           </button>
@@ -114,7 +116,7 @@ function JobsContent() {
       {/* Jobs Grid */}
       {loading ? (
         <div className="py-12 flex justify-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-600" />
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-orange-600" />
         </div>
       ) : jobs.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center text-gray-500 border border-gray-100">
@@ -135,7 +137,7 @@ function JobsContent() {
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg">
+                    <div className="w-11 h-11 rounded-2xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold text-lg">
                       {job.organizationName[0]}
                     </div>
                     <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-semibold border border-amber-200">
@@ -152,7 +154,7 @@ function JobsContent() {
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    <span className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                    <span className="bg-orange-50 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
                       {language === "bn" ? job.category?.nameBn : job.category?.nameEn || job.category?.nameBn}
                     </span>
                     <span className="bg-blue-50 text-blue-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
@@ -183,7 +185,7 @@ function JobsContent() {
                   <button
                     onClick={() => handleApply(job.id)}
                     disabled={applyingJobId === job.id}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2"
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2"
                   >
                     <span>{applyingJobId === job.id ? (language === "bn" ? "আবেদন হচ্ছে..." : "Applying...") : t("apply_now")}</span>
                   </button>
@@ -191,7 +193,7 @@ function JobsContent() {
                   {applyResult && applyResult.id === job.id && (
                     <p
                       className={`text-xs mt-2 text-center font-medium ${
-                        applyResult.error ? "text-red-600" : "text-emerald-600"
+                        applyResult.error ? "text-red-600" : "text-orange-600"
                       }`}
                     >
                       {applyResult.text}
