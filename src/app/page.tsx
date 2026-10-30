@@ -79,211 +79,110 @@ export default function HomePage() {
       {/* 1. HERO SECTION matching uploaded mockup design */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="rounded-[2.5rem] bg-[#F4F5F7] border border-gray-200/80 p-8 sm:p-12 lg:p-16 relative overflow-hidden shadow-sm">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-7 space-y-6 z-10">
-              {/* Pill Badge */}
-              <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-700 text-xs px-3.5 py-1.5 rounded-full font-medium shadow-sm">
-                <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                  {language === "bn" ? "নতুন" : "New"}
-                </span>
-                <span>
-                  {language === "bn"
-                    ? "১-ক্লিক প্রোফাইল ও অটো-অ্যাপ্লাই ফিচার ›"
-                    : "Introducing 1-Click Portfolio & Apply ›"}
-                </span>
-              </div>
-
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-950 tracking-tight leading-[1.12]">
-                {language === "bn" ? (
-                  <>
-                    স্বপ্নের চাকরি খুঁজুন <br />
-                    <span className="text-orange-600">সহজ ও দ্রুত</span>
-                  </>
-                ) : (
-                  <>
-                    Find your dream <br />
-                    <span className="text-orange-600">job faster</span>
-                  </>
-                )}
-              </h1>
-
-              {/* Subtitle */}
-              <p className="text-gray-600 text-base sm:text-lg max-w-xl font-normal leading-relaxed">
+          <div className="max-w-3xl mx-auto text-center space-y-6 z-10">
+            {/* Pill Badge */}
+            <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-700 text-xs px-3.5 py-1.5 rounded-full font-medium shadow-sm">
+              <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                {language === "bn" ? "নতুন" : "New"}
+              </span>
+              <span>
                 {language === "bn"
-                  ? "শীর্ষ সরকারি, বেসরকারি, কৃষি ও মৎস্য খাতে ক্যারিয়ার গড়ার আধুনিক প্ল্যাটফর্ম। ১ বার প্রোফাইল সেভ করে ১ ক্লিকেই আবেদন করুন।"
-                  : "Connect with top companies and organizations in Government, Private, Agriculture & Fisheries to unlock opportunities that grow your career."}
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Link
-                  href="/jobs"
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-7 py-3.5 rounded-full text-sm transition shadow-md shadow-orange-600/20 flex items-center gap-2"
-                >
-                  <span>{language === "bn" ? "চাকরি খুঁজুন" : "Find Your Job"}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-
-                <Link
-                  href="/dashboard/profile"
-                  className="bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-bold px-6 py-3.5 rounded-full text-sm transition shadow-sm flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4 fill-gray-800 text-gray-800" />
-                  <span>{language === "bn" ? "কীভাবে কাজ করে" : "Watch Video"}</span>
-                </Link>
-              </div>
-
-              {/* Integrated Search Bar */}
-              <div className="pt-4">
-                <div className="bg-white p-2.5 rounded-2xl shadow-xl shadow-orange-500/5 border border-gray-200/90 flex flex-col md:flex-row items-center gap-2">
-                  <div className="flex items-center gap-3 px-4 py-2 flex-1 w-full border-b md:border-b-0 md:border-r border-gray-100">
-                    <Search className="w-4 h-4 text-orange-500" />
-                    <input
-                      type="text"
-                      placeholder={t("hero_search_placeholder")}
-                      value={searchKeyword}
-                      onChange={(e) => setSearchKeyword(e.target.value)}
-                      className="w-full text-gray-800 text-sm focus:outline-none placeholder-gray-400"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 px-3 py-2 w-full md:w-44 border-b md:border-b-0 md:border-r border-gray-100">
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full text-gray-700 text-sm bg-transparent focus:outline-none font-medium"
-                    >
-                      <option value="">{t("all_categories")}</option>
-                      <option value="govt">{language === "bn" ? "সরকারি" : "Government"}</option>
-                      <option value="private">{language === "bn" ? "বেসরকারি" : "Private"}</option>
-                      <option value="krishi">{language === "bn" ? "কৃষি" : "Agriculture"}</option>
-                      <option value="motso">{language === "bn" ? "মৎস্য" : "Fisheries"}</option>
-                      <option value="it">{language === "bn" ? "তথ্যপ্রযুক্তি" : "Technology & IT"}</option>
-                      <option value="others">{language === "bn" ? "অন্যান্য" : "Others"}</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center gap-2 px-3 py-2 w-full md:w-36">
-                    <select
-                      value={selectedDistrict}
-                      onChange={(e) => setSelectedDistrict(e.target.value)}
-                      className="w-full text-gray-700 text-sm bg-transparent focus:outline-none font-medium"
-                    >
-                      <option value="">{t("all_districts")}</option>
-                      <option value="1">{language === "bn" ? "ঢাকা" : "Dhaka"}</option>
-                      <option value="14">{language === "bn" ? "চট্টগ্রাম" : "Chattogram"}</option>
-                      <option value="25">{language === "bn" ? "রাজশাহী" : "Rajshahi"}</option>
-                      <option value="33">{language === "bn" ? "খুলনা" : "Khulna"}</option>
-                    </select>
-                  </div>
-
-                  <Link
-                    href={`/jobs?search=${encodeURIComponent(searchKeyword)}&category=${selectedCategory}&district=${selectedDistrict}`}
-                    className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white font-bold px-7 py-3 rounded-xl transition shadow-sm flex items-center justify-center gap-2 shrink-0"
-                  >
-                    <span>{t("search_btn")}</span>
-                  </Link>
-                </div>
-              </div>
+                  ? "১-ক্লিক প্রোফাইল ও অটো-অ্যাপ্লাই ফিচার ›"
+                  : "Introducing 1-Click Portfolio & Apply ›"}
+              </span>
             </div>
 
-            {/* Right Hero Visual: Pure Graphical Showcase (No human picture/photo) */}
-            <div className="lg:col-span-5 relative flex items-center justify-center">
-              {/* Ambient Glow */}
-              <div className="absolute w-80 h-80 bg-gradient-to-tr from-amber-400/25 to-orange-500/20 rounded-full blur-3xl -z-10" />
+            {/* Main Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-950 tracking-tight leading-[1.15]">
+              {language === "bn" ? (
+                <>
+                  স্বপ্নের চাকরি খুঁজুন{" "}
+                  <span className="text-orange-600">সহজ ও দ্রুত</span>
+                </>
+              ) : (
+                <>
+                  Find your dream{" "}
+                  <span className="text-orange-600">job faster</span>
+                </>
+              )}
+            </h1>
 
-              {/* Pure Graphical Showcase Card */}
-              <div className="relative rounded-3xl bg-white/95 backdrop-blur-xl shadow-2xl border-2 border-orange-100/80 p-6 sm:p-7 w-full max-w-sm sm:max-w-md space-y-5">
-                {/* Header Badge & Live Status */}
-                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs font-black uppercase tracking-wider text-gray-700">
-                      {language === "bn" ? "লাইভ জব সার্কুলার" : "Live Job Circulars"}
-                    </span>
-                  </div>
-                  <span className="bg-orange-50 text-orange-700 font-bold text-[11px] px-2.5 py-1 rounded-full border border-orange-200">
-                    ⚡ 99.5% {language === "bn" ? "সঠিক ম্যাচ" : "Match Rate"}
-                  </span>
+            {/* Subtitle */}
+            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto font-normal leading-relaxed">
+              {language === "bn"
+                ? "শীর্ষ সরকারি, বেসরকারি, কৃষি ও মৎস্য খাতে ক্যারিয়ার গড়ার আধুনিক প্ল্যাটফর্ম। ১ বার প্রোফাইল সেভ করে ১ ক্লিকেই আবেদন করুন।"
+                : "Connect with top companies and organizations in Government, Private, Agriculture & Fisheries to unlock opportunities that grow your career."}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-1">
+              <Link
+                href="/jobs"
+                className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-7 py-3.5 rounded-full text-sm transition shadow-md shadow-orange-600/20 flex items-center gap-2"
+              >
+                <span>{language === "bn" ? "চাকরি খুঁজুন" : "Find Your Job"}</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <Link
+                href="/dashboard/profile"
+                className="bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-bold px-6 py-3.5 rounded-full text-sm transition shadow-sm flex items-center gap-2"
+              >
+                <Play className="w-4 h-4 fill-gray-800 text-gray-800" />
+                <span>{language === "bn" ? "কীভাবে কাজ করে" : "Watch Video"}</span>
+              </Link>
+            </div>
+
+            {/* Integrated Search Bar */}
+            <div className="pt-4 max-w-3xl mx-auto">
+              <div className="bg-white p-2.5 rounded-2xl shadow-xl shadow-orange-500/5 border border-gray-200/90 flex flex-col md:flex-row items-center gap-2 text-left">
+                <div className="flex items-center gap-3 px-4 py-2 flex-1 w-full border-b md:border-b-0 md:border-r border-gray-100">
+                  <Search className="w-4 h-4 text-orange-500" />
+                  <input
+                    type="text"
+                    placeholder={t("hero_search_placeholder")}
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    className="w-full text-gray-800 text-sm focus:outline-none placeholder-gray-400"
+                  />
                 </div>
 
-                {/* Central Career Metric Feature */}
-                <div className="bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 text-white rounded-2xl p-5 shadow-lg shadow-orange-500/20 relative overflow-hidden">
-                  <div className="absolute -right-4 -bottom-4 w-28 h-28 bg-white/10 rounded-full blur-sm" />
-                  <div className="flex items-start justify-between relative z-10">
-                    <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-orange-100">
-                        {language === "bn" ? "স্মার্ট ক্যারিয়ার পোর্টাল" : "Smart Career Portal"}
-                      </span>
-                      <h4 className="text-xl font-black mt-1">
-                        {language === "bn" ? "১-ক্লিকে তাৎক্ষণিক আবেদন" : "1-Click Direct Apply"}
-                      </h4>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-amber-200" />
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-medium text-orange-100">
-                    <span>{language === "bn" ? "প্রতিদিন নতুন নিয়োগ" : "Daily Fresh Openings"}</span>
-                    <span className="font-bold text-white bg-white/20 px-2 py-0.5 rounded-full text-[11px]">
-                      ১২০+ {language === "bn" ? "টি বিজ্ঞপ্তি" : "Circulars"}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 px-3 py-2 w-full md:w-44 border-b md:border-b-0 md:border-r border-gray-100">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full text-gray-700 text-sm bg-transparent focus:outline-none font-medium"
+                  >
+                    <option value="">{t("all_categories")}</option>
+                    <option value="govt">{language === "bn" ? "সরকারি" : "Government"}</option>
+                    <option value="private">{language === "bn" ? "বেসরকারি" : "Private"}</option>
+                    <option value="krishi">{language === "bn" ? "কৃষি" : "Agriculture"}</option>
+                    <option value="motso">{language === "bn" ? "মৎস্য" : "Fisheries"}</option>
+                    <option value="it">{language === "bn" ? "তথ্যপ্রযুক্তি" : "Technology & IT"}</option>
+                    <option value="others">{language === "bn" ? "অন্যান্য" : "Others"}</option>
+                  </select>
                 </div>
 
-                {/* Floating Skill & Category Badges */}
-                <div className="space-y-2 pt-1">
-                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    {language === "bn" ? "জনপ্রিয় চাকরির খাতসমূহ" : "Popular Hiring Sectors"}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="bg-[#FEF08A] text-amber-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-amber-300">
-                      💻 Technology & IT
-                    </span>
-                    <span className="bg-[#FED7AA] text-orange-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-orange-300">
-                      🌾 {language === "bn" ? "কৃষি ও এগ্রো-ফার্মিং" : "Agriculture & Agro"}
-                    </span>
-                    <span className="bg-[#BAE6FD] text-sky-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-sky-300">
-                      🐟 {language === "bn" ? "মৎস্য ও অ্যাকুয়াকালচার" : "Fisheries & Marine"}
-                    </span>
-                    <span className="bg-[#E9D5FF] text-purple-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-purple-300">
-                      🏛️ {language === "bn" ? "সরকারি ও প্রশাসন" : "Govt & Administration"}
-                    </span>
-                    <span className="bg-[#BBF7D0] text-emerald-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-sm border border-emerald-300">
-                      🏢 {language === "bn" ? "বেসরকারি ও কর্পোরেট" : "Private & Corporate"}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 px-3 py-2 w-full md:w-36">
+                  <select
+                    value={selectedDistrict}
+                    onChange={(e) => setSelectedDistrict(e.target.value)}
+                    className="w-full text-gray-700 text-sm bg-transparent focus:outline-none font-medium"
+                  >
+                    <option value="">{t("all_districts")}</option>
+                    <option value="1">{language === "bn" ? "ঢাকা" : "Dhaka"}</option>
+                    <option value="14">{language === "bn" ? "চট্টগ্রাম" : "Chattogram"}</option>
+                    <option value="25">{language === "bn" ? "রাজশাহী" : "Rajshahi"}</option>
+                    <option value="33">{language === "bn" ? "খুলনা" : "Khulna"}</option>
+                  </select>
                 </div>
 
-                {/* Quick Info Checklist */}
-                <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-150 grid grid-cols-2 gap-3 text-xs">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="font-semibold text-gray-700">
-                      {language === "bn" ? "ভেরিফাইড প্রতিষ্ঠান" : "Verified Companies"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="font-semibold text-gray-700">
-                      {language === "bn" ? "এসএমএস অ্যালার্ট" : "SMS Alerts"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="font-semibold text-gray-700">
-                      {language === "bn" ? "অনলাইন সিভি" : "Digital CV & Profile"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="font-semibold text-gray-700">
-                      {language === "bn" ? "নিরাপদ ডাটা" : "100% Data Safe"}
-                    </span>
-                  </div>
-                </div>
+                <Link
+                  href={`/jobs?search=${encodeURIComponent(searchKeyword)}&category=${selectedCategory}&district=${selectedDistrict}`}
+                  className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white font-bold px-7 py-3 rounded-xl transition shadow-sm flex items-center justify-center gap-2 shrink-0"
+                >
+                  <span>{t("search_btn")}</span>
+                </Link>
               </div>
             </div>
           </div>
