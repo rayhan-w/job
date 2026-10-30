@@ -197,7 +197,7 @@ export default function HomePage() {
               {/* Candidate Image Card matching the uploaded picture with yellow armchair */}
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white w-full max-w-sm sm:max-w-md">
                 <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=900&auto=format&fit=crop"
+                  src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=900&auto=format&fit=crop"
                   alt="Candidate"
                   className="w-full h-[400px] object-cover object-top"
                 />
