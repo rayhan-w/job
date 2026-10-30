@@ -1,0 +1,688 @@
+// Prisma Schema for Job Portal + Portfolio/CV + Quiz + Wallet + Referral Commission Platform
+// Configured with SQLite for local execution with Prisma ORM; 1-click switch to PostgreSQL for production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(uuid())
+  name          String
+  phone         String      @unique
+  email         String?     @unique
+  passwordHash  String      @map("password_hash")
+  role          String      @default("CUSTOMER") // SUPER_ADMIN, ADMIN_STAFF, CHANNEL_PARTNER, AGENT, CUSTOMER, INSTITUTION
+  language      String      @default("bn")       // bn or en
+  status        String      @default("ACTIVE")   // ACTIVE, INACTIVE, BLOCKED
+  avatarUrl     String?     @map("avatar_url")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Relationships
+  staffProfile      StaffProfile?
+  channelPartner    ChannelPartner?
+  agent             Agent?
+  customer          Customer?
+  candidateProfile  CandidateProfile?
+  institution       Institution?
+  institutionStaff  InstitutionStaff?
+  wallet            Wallet?
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  educations        Education[]
+  experiences       Experience[]
+  skills            Skill[]
+  cvFile            CvFile?
+  savedJobs         SavedJob[]
+  jobAlerts         JobAlert[]
+  cashInRequests    CashInRequest[]
+  cashOutRequests   CashOutRequest[]
+  quizAttempts      QuizAttempt[]
+  questionsAuthored Question[]
+  orders            Order[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  isSystem    Boolean          @default(false) @map("is_system")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  permissions RolePermission[]
+  staff       StaffProfile[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  module      String           // jobs, users, wallets, quiz, commissions, settings, etc.
+  action      String           // view, create, edit, delete, approve, impersonate
+  description String?
+  roles       RolePermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model StaffProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  roleId      String   @map("role_id")
+  designation String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@map("staff_profiles")
+}
+
+model District {
+  id       Int     @id @default(autoincrement())
+  nameBn   String  @map("name_bn")
+  nameEn   String  @map("name_en")
+  division String
+
+  channelPartner    ChannelPartner?
+  agents            Agent[]
+  candidateProfiles CandidateProfile[]
+  institutions      Institution[]
+  jobs              Job[]
+  jobAlerts         JobAlert[]
+
+  @@map("districts")
+}
+
+model ChannelPartner {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  districtId     Int      @unique @map("district_id") // Exactly ONE per district constraint
+  commissionRate Float    @default(5.0) @map("commission_rate")
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  district    District     @relation(fields: [districtId], references: [id])
+  agents      Agent[]
+  commissions Commission[]
+
+  @@map("channel_partners")
+}
+
+model Agent {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  channelPartnerId String   @map("channel_partner_id")
+  districtId       Int?     @map("district_id")
+  referralCode     String   @unique @map("referral_code")
+  isDefault        Boolean  @default(false) @map("is_default")
+  commissionRate   Float    @default(10.0) @map("commission_rate")
+  commissionActive Boolean  @default(true) @map("commission_active")
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelPartner ChannelPartner @relation(fields: [channelPartnerId], references: [id], onDelete: Restrict)
+  district       District?      @relation(fields: [districtId], references: [id])
+  customers      Customer[]
+  commissions    Commission[]
+
+  @@map("agents")
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  agentId     String   @map("agent_id") // Lifetime referral binding!
+  assignedBy  String?  @map("assigned_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent        Agent            @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  applications JobApplication[]
+
+  @@map("customers")
+}
+
+model CandidateProfile {
+  id                  String    @id @default(uuid())
+  userId              String    @unique @map("user_id")
+  photo               String?
+  fatherName          String?   @map("father_name")
+  motherName          String?   @map("mother_name")
+  dob                 DateTime?
+  gender              String?
+  nid                 String?
+  presentAddress      String?   @map("present_address")
+  permanentAddress    String?   @map("permanent_address")
+  districtId          Int?      @map("district_id")
+  phone               String?
+  email               String?
+  careerObjective     String?   @map("career_objective")
+  expectedSalary      String?   @map("expected_salary")
+  preferredCategories String?   @map("preferred_categories")
+  preferredDistricts  String?   @map("preferred_districts")
+  completeness        Int       @default(0)
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  district District? @relation(fields: [districtId], references: [id])
+
+  @@map("candidate_profiles")
+}
+
+model Education {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id")
+  exam               String
+  boardOrInstitution String   @map("board_or_institution")
+  subjectOrGroup     String   @map("subject_or_group")
+  result             String
+  passingYear        Int      @map("passing_year")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("educations")
+}
+
+model Experience {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  organization     String
+  designation      String
+  duration         String
+  responsibilities String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("experiences")
+}
+
+model Skill {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  skillName String   @map("skill_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("skills")
+}
+
+model CvFile {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  fileUrl      String?  @map("file_url")
+  onlineCvData String?  @map("online_cv_data")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cv_files")
+}
+
+model Institution {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  nameBn       String   @map("name_bn")
+  nameEn       String   @map("name_en")
+  type         String
+  logo         String?
+  address      String?
+  districtId   Int?     @map("district_id")
+  tradeLicence String?  @map("trade_licence")
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  district   District?          @relation(fields: [districtId], references: [id])
+  staff      InstitutionStaff[]
+  jobs       Job[]
+  quizBooks  QuizBook[]
+
+  @@map("institutions")
+}
+
+model InstitutionStaff {
+  id            String   @id @default(uuid())
+  institutionId String   @map("institution_id")
+  userId        String   @unique @map("user_id")
+  designation   String
+  canLogin      Boolean  @default(true) @map("can_login")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("institution_staff")
+}
+
+model JobCategory {
+  id     String     @id @default(uuid())
+  nameBn String     @map("name_bn")
+  nameEn String     @map("name_en")
+  icon   String?
+  slug   String     @unique
+  jobs   Job[]
+  alerts JobAlert[]
+
+  @@map("job_categories")
+}
+
+model Job {
+  id                  String    @id @default(uuid())
+  institutionId       String?   @map("institution_id")
+  postedByAdmin       Boolean   @default(false) @map("posted_by_admin")
+  titleBn             String    @map("title_bn")
+  titleEn             String    @map("title_en")
+  organizationName    String    @map("organization_name")
+  categoryId          String    @map("category_id")
+  jobType             String    @default("FULL_TIME") @map("job_type")
+  workplaceDistrictId Int?      @map("workplace_district_id")
+  workplaceLocation   String?   @map("workplace_location")
+  vacancy             Int       @default(1)
+  salaryRange         String    @default("Negotiable") @map("salary_range")
+  educationReq        String?   @map("education_req")
+  experienceReq       String?   @map("experience_req")
+  ageLimit            String?   @map("age_limit")
+  gender              String?
+  descriptionBn       String    @map("description_bn")
+  descriptionEn       String    @map("description_en")
+  responsibilities    String?
+  otherReqs           String?   @map("other_reqs")
+  deadline            DateTime
+  publishedAt         DateTime  @default(now()) @map("published_at")
+  circularFileUrl     String?   @map("circular_file_url")
+  originalSourceUrl   String?   @map("original_source_url")
+  status              String    @default("PENDING") // DRAFT, PENDING, PUBLISHED, EXPIRED, CLOSED
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  institution       Institution?     @relation(fields: [institutionId], references: [id])
+  category          JobCategory      @relation(fields: [categoryId], references: [id])
+  workplaceDistrict District?        @relation(fields: [workplaceDistrictId], references: [id])
+  applications      JobApplication[]
+  savedJobs         SavedJob[]
+
+  @@map("jobs")
+}
+
+model JobApplication {
+  id              String   @id @default(uuid())
+  jobId           String   @map("job_id")
+  customerId      String   @map("customer_id")
+  profileSnapshot String   @map("profile_snapshot") // JSON snapshot at apply time
+  status          String   @default("APPLIED")     // APPLIED, VIEWED, SHORTLISTED, INTERVIEW_CALLED, SELECTED, REJECTED
+  appliedAt       DateTime @default(now()) @map("applied_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  job      Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, customerId])
+  @@map("job_applications")
+}
+
+model SavedJob {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  jobId     String   @map("job_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@map("saved_jobs")
+}
+
+model JobAlert {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  categoryId String?  @map("category_id")
+  districtId Int?     @map("district_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category JobCategory? @relation(fields: [categoryId], references: [id])
+  district District?    @relation(fields: [districtId], references: [id])
+
+  @@map("job_alerts")
+}
+
+model Product {
+  id                 String   @id @default(uuid())
+  nameBn             String   @map("name_bn")
+  nameEn             String   @map("name_en")
+  imageUrl           String?  @map("image_url")
+  descriptionBn      String?  @map("description_bn")
+  descriptionEn      String?  @map("description_en")
+  costPrice          Float    @map("cost_price")
+  salePrice          Float    @map("sale_price")
+  category           String
+  isDigital          Boolean  @default(true) @map("is_digital")
+  stock              Int      @default(9999)
+  commissionEligible Boolean  @default(true) @map("commission_eligible")
+  status             String   @default("ACTIVE")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  orderItems      OrderItem[]
+  commissionRules CommissionRule[]
+
+  @@map("products")
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  customerId  String   @map("customer_id")
+  totalAmount Float    @map("total_amount")
+  status      String   @default("COMPLETED") // PENDING, COMPLETED, CANCELLED, REFUNDED
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items       OrderItem[]
+  commissions Commission[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String @map("order_id")
+  productId String @map("product_id")
+  quantity  Int    @default(1)
+  unitCost  Float  @map("unit_cost")
+  unitPrice Float  @map("unit_price")
+  totalCost Float  @map("total_cost")
+  totalSale Float  @map("total_sale")
+  profit    Float
+
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id])
+  commissions Commission[]
+
+  @@map("order_items")
+}
+
+model CommissionRule {
+  id              String   @id @default(uuid())
+  productId       String?  @map("product_id")
+  category        String?
+  agentPercentage Float    @default(10.0) @map("agent_percentage")
+  cpPercentage    Float    @default(5.0) @map("cp_percentage")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("commission_rules")
+}
+
+model Commission {
+  id               String   @id @default(uuid())
+  orderId          String   @map("order_id")
+  orderItemId      String?  @map("order_item_id")
+  agentId          String   @map("agent_id")
+  channelPartnerId String   @map("channel_partner_id")
+  agentAmount      Float    @map("agent_amount")
+  cpAmount         Float    @map("cp_amount")
+  ruleSnapshot     String   @map("rule_snapshot")
+  status           String   @default("PAID") // PENDING, PAID, REVERSED
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem      OrderItem?     @relation(fields: [orderItemId], references: [id])
+  agent          Agent          @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  channelPartner ChannelPartner @relation(fields: [channelPartnerId], references: [id], onDelete: Restrict)
+
+  @@map("commissions")
+}
+
+model Wallet {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  balance     Float    @default(0.0)
+  heldBalance Float    @default(0.0) @map("held_balance")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+// Immutable Ledger — NEVER EDIT OR DELETE
+model WalletTransaction {
+  id            String   @id @default(uuid())
+  walletId      String   @map("wallet_id")
+  type          String   // CASH_IN, CASH_OUT_HOLD, CASH_OUT_RELEASE, CASH_OUT_DEDUCT, PURCHASE, REFUND, COMMISSION, QUIZ_BONUS, ADMIN_ADJUSTMENT
+  amount        Float
+  balanceAfter  Float    @map("balance_after")
+  referenceType String?  @map("reference_type")
+  referenceId   String?  @map("reference_id")
+  note          String?
+  createdBy     String?  @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_transactions")
+}
+
+model CashInRequest {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  amount          Float
+  method          String
+  senderNumber    String    @map("sender_number")
+  transactionId   String    @unique @map("transaction_id")
+  screenshotUrl   String?   @map("screenshot_url")
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason String?   @map("rejection_reason")
+  approvedBy      String?   @map("approved_by")
+  processedAt     DateTime? @map("processed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cash_in_requests")
+}
+
+model CashOutRequest {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  amount          Float
+  feeAmount       Float     @default(0.0) @map("fee_amount")
+  netAmount       Float     @map("net_amount")
+  method          String
+  receiverNumber  String    @map("receiver_number")
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason String?   @map("rejection_reason")
+  approvedBy      String?   @map("approved_by")
+  processedAt     DateTime? @map("processed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cash_out_requests")
+}
+
+model QuizBook {
+  id            String   @id @default(uuid())
+  nameBn        String   @map("name_bn")
+  nameEn        String   @map("name_en")
+  subject       String
+  institutionId String?  @map("institution_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  institution  Institution?  @relation(fields: [institutionId], references: [id])
+  questions    Question[]
+  quizPackages QuizPackage[]
+
+  @@map("quiz_books")
+}
+
+model Question {
+  id              String   @id @default(uuid())
+  bookId          String   @map("book_id")
+  questionBn      String   @map("question_bn")
+  questionEn      String   @map("question_en")
+  optionA         String   @map("option_a")
+  optionB         String   @map("option_b")
+  optionC         String   @map("option_c")
+  optionD         String   @map("option_d")
+  correctOption   String   @map("correct_option") // A, B, C, D
+  difficulty      String   @default("MEDIUM")
+  marks           Float    @default(1.0)
+  negativeMarks   Float    @default(0.25) @map("negative_marks")
+  explanationBn   String?  @map("explanation_bn")
+  explanationEn   String?  @map("explanation_en")
+  createdByUserId String?  @map("created_by_user_id")
+  status          String   @default("APPROVED") // PENDING, APPROVED, REJECTED
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  book        QuizBook     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author      User?        @relation(fields: [createdByUserId], references: [id])
+  quizAnswers QuizAnswer[]
+
+  @@map("questions")
+}
+
+model QuizPackage {
+  id               String   @id @default(uuid())
+  nameBn           String   @map("name_bn")
+  nameEn           String   @map("name_en")
+  bookId           String   @map("book_id")
+  questionCount    Int      @default(10) @map("question_count")
+  timeLimitMinutes Int      @default(10) @map("time_limit_minutes")
+  price            Float    @default(0.0)
+  attemptsAllowed  Int      @default(1) @map("attempts_allowed")
+  targetScore      Float    @map("target_score")
+  bonusAmount      Float    @map("bonus_amount")
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  book     QuizBook      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  attempts QuizAttempt[]
+
+  @@map("quiz_packages")
+}
+
+model QuizAttempt {
+  id               String    @id @default(uuid())
+  packageId        String    @map("package_id")
+  userId           String    @map("user_id")
+  score            Float     @default(0.0)
+  totalQuestions   Int       @default(0) @map("total_questions")
+  correctCount     Int       @default(0) @map("correct_count")
+  wrongCount       Int       @default(0) @map("wrong_count")
+  timeTakenSeconds Int       @default(0) @map("time_taken_seconds")
+  bonusAwarded     Boolean   @default(false) @map("bonus_awarded")
+  status           String    @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, TIMED_OUT
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+
+  package QuizPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers QuizAnswer[]
+
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id             String  @id @default(uuid())
+  attemptId      String  @map("attempt_id")
+  questionId     String  @map("question_id")
+  selectedOption String? @map("selected_option")
+  isCorrect      Boolean @default(false) @map("is_correct")
+
+  attempt  QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_answers")
+}
+
+model SmsTemplate {
+  id         String   @id @default(uuid())
+  slug       String   @unique
+  title      String
+  templateBn String   @map("template_bn")
+  templateEn String   @map("template_en")
+  variables  String
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("sms_templates")
+}
+
+model SmsLog {
+  id        String   @id @default(uuid())
+  phone     String
+  message   String
+  provider  String   @default("LOG_SANDBOX")
+  status    String
+  cost      Float?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("sms_logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  titleBn   String   @map("title_bn")
+  titleEn   String   @map("title_en")
+  messageBn String   @map("message_bn")
+  messageEn String   @map("message_en")
+  link      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  role       String?
+  action     String
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id")
+  details    String?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
