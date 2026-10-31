@@ -19,12 +19,22 @@ function JobsContent() {
   const searchParams = useSearchParams();
 
   const [jobs, setJobs] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [category, setCategory] = useState(searchParams.get("category") || searchParams.get("categoryId") || "");
   const [district, setDistrict] = useState(searchParams.get("district") || searchParams.get("districtId") || "");
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
   const [applyResult, setApplyResult] = useState<{ id: string; text: string; error?: boolean } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.categories) setCategories(data.categories);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const urlCategory = searchParams.get("category") || searchParams.get("categoryId") || "";
@@ -104,12 +114,11 @@ function JobsContent() {
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-orange-500 focus:outline-none bg-white"
             >
               <option value="">{t("all_categories")}</option>
-              <option value="govt">{language === "bn" ? "সরকারি" : "Government"}</option>
-              <option value="private">{language === "bn" ? "বেসরকারি" : "Private"}</option>
-              <option value="krishi">{language === "bn" ? "কৃষি" : "Agriculture"}</option>
-              <option value="motso">{language === "bn" ? "মৎস্য" : "Fisheries"}</option>
-              <option value="it">{language === "bn" ? "তথ্যপ্রযুক্তি" : "Technology & IT"}</option>
-              <option value="others">{language === "bn" ? "অন্যান্য" : "Others"}</option>
+              {categories.map((c) => (
+                <option key={c.id || c.slug} value={c.slug}>
+                  {language === "bn" ? c.nameBn : c.nameEn}
+                </option>
+              ))}
             </select>
           </div>
 

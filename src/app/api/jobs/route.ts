@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
-    const categoryId = searchParams.get("categoryId") || "";
-    const districtId = searchParams.get("districtId") ? Number(searchParams.get("districtId")) : undefined;
+    const categoryId = searchParams.get("categoryId") || searchParams.get("category") || "";
+    const districtId = searchParams.get("districtId") || searchParams.get("district") ? Number(searchParams.get("districtId") || searchParams.get("district")) : undefined;
     const jobType = searchParams.get("jobType") as JobType | undefined;
     const status = (searchParams.get("status") as JobStatus) || "PUBLISHED";
 
