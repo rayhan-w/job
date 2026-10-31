@@ -16,12 +16,15 @@ import {
   RefreshCw,
   Plus,
   Trash2,
+  BookOpen,
+  HelpCircle,
+  Check,
 } from "lucide-react";
 
 export default function AdminPage() {
   const { language } = useLanguage();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "commission" | "users" | "categories">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "commission" | "users" | "categories" | "quizzes">("overview");
 
   // Data states
   const [reportData, setReportData] = useState<any>(null);
@@ -34,6 +37,29 @@ export default function AdminPage() {
   const [newCatNameEn, setNewCatNameEn] = useState("");
   const [newCatSlug, setNewCatSlug] = useState("");
   const [newCatIcon, setNewCatIcon] = useState("Briefcase");
+
+  // Quiz management states
+  const [quizBooks, setQuizBooks] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [selectedBookFilter, setSelectedBookFilter] = useState<string>("");
+  const [loadingQuiz, setLoadingQuiz] = useState<boolean>(false);
+
+  // New Quiz Book form state
+  const [newBookNameBn, setNewBookNameBn] = useState("");
+  const [newBookNameEn, setNewBookNameEn] = useState("");
+  const [newBookSubject, setNewBookSubject] = useState("General Knowledge");
+
+  // New Question form state
+  const [newQBookId, setNewQBookId] = useState("");
+  const [newQTextBn, setNewQTextBn] = useState("");
+  const [newQTextEn, setNewQTextEn] = useState("");
+  const [newQOptA, setNewQOptA] = useState("");
+  const [newQOptB, setNewQOptB] = useState("");
+  const [newQOptC, setNewQOptC] = useState("");
+  const [newQOptD, setNewQOptD] = useState("");
+  const [newQCorrect, setNewQCorrect] = useState<string>("A");
+  const [newQDifficulty, setNewQDifficulty] = useState("MEDIUM");
+  const [newQExplanationBn, setNewQExplanationBn] = useState("");
 
   const fetchAdminData = async () => {
     try {
@@ -108,6 +134,116 @@ export default function AdminPage() {
     } catch {
       //
     }
+  };
+
+  const fetchQuizData = async () => {
+    setLoadingQuiz(true);
+    try {
+      const [booksRes, questionsRes] = await Promise.all([
+        fetch("/api/quiz/books"),
+        fetch("/api/questions"),
+      ]);
+      const booksData = await booksRes.json();
+      const questionsData = await questionsRes.json();
+
+      if (booksData.books) {
+        setQuizBooks(booksData.books);
+        if (booksData.books.length > 0) {
+          setNewQBookId((prev) => prev || booksData.books[0].id);
+        }
+      }
+      if (questionsData.questions) {
+        setQuestions(questionsData.questions);
+      }
+    } catch {
+      //
+    } finally {
+      setLoadingQuiz(false);
+    }
+  };
+
+  const handleCreateQuizBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBookNameBn) return;
+    try {
+      const res = await fetch("/api/quiz/books", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nameBn: newBookNameBn,
+          nameEn: newBookNameEn || newBookNameBn,
+          subject: newBookSubject,
+        }),
+      });
+      if (res.ok) {
+        setActionMessage(language === "bn" ? "নতুন কুইজ বিষয়/বই সফলভাবে তৈরি হয়েছে!" : "Quiz book created successfully!");
+        setNewBookNameBn("");
+        setNewBookNameEn("");
+        fetchQuizData();
+      }
+    } catch {}
+  };
+
+  const handleDeleteQuizBook = async (id: string, name: string) => {
+    if (!confirm(language === "bn" ? `আপনি কি '${name}' কুইজ বইটি মুছে ফেলতে চান?` : `Delete book '${name}'?`)) return;
+    try {
+      const res = await fetch(`/api/quiz/books?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setActionMessage(language === "bn" ? "কুইজ বইটি মুছে ফেলা হয়েছে!" : "Quiz book deleted!");
+        fetchQuizData();
+      }
+    } catch {}
+  };
+
+  const handleCreateQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQBookId || !newQTextBn || !newQOptA || !newQOptB) {
+      alert(language === "bn" ? "কুইজ বই, প্রশ্ন এবং কমপক্ষে ২টি অপশন প্রদান করুন" : "Please fill out required question fields");
+      return;
+    }
+    try {
+      const res = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookId: newQBookId,
+          questionBn: newQTextBn,
+          questionEn: newQTextEn || newQTextBn,
+          optionA: newQOptA,
+          optionB: newQOptB,
+          optionC: newQOptC,
+          optionD: newQOptD,
+          correctOption: newQCorrect,
+          difficulty: newQDifficulty,
+          explanationBn: newQExplanationBn,
+        }),
+      });
+      if (res.ok) {
+        setActionMessage(language === "bn" ? "প্রশ্ন সফলভাবে আপলোড হয়েছে এবং প্রশ্ন ব্যাংকে অনুমোদিত হয়েছে!" : "Question uploaded and approved!");
+        setNewQTextBn("");
+        setNewQTextEn("");
+        setNewQOptA("");
+        setNewQOptB("");
+        setNewQOptC("");
+        setNewQOptD("");
+        setNewQExplanationBn("");
+        fetchQuizData();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to upload question");
+      }
+    } catch {}
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    if (!confirm(language === "bn" ? "আপনি কি নিশ্চিত এই প্রশ্নটি ডিলিট করতে চান?" : "Are you sure you want to delete this question?")) return;
+    try {
+      const res = await fetch(`/api/questions?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setActionMessage(language === "bn" ? "প্রশ্নটি সফলভাবে মুছে ফেলা হয়েছে!" : "Question deleted!");
+        fetchQuizData();
+      }
+    } catch {}
   };
 
   useEffect(() => {
@@ -233,6 +369,17 @@ export default function AdminPage() {
             }`}
           >
             {language === "bn" ? "ক্যাটাগরি ম্যানেজমেন্ট" : "Categories"}
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("quizzes");
+              fetchQuizData();
+            }}
+            className={`px-3.5 py-2 rounded-xl transition ${
+              activeTab === "quizzes" ? "bg-white text-slate-900" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+            }`}
+          >
+            {language === "bn" ? "কুইজ ও প্রশ্ন আপলোড" : "Quiz & Questions"}
           </button>
         </div>
       </div>
@@ -576,6 +723,421 @@ export default function AdminPage() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. QUIZZES & QUESTIONS MANAGEMENT TAB */}
+      {activeTab === "quizzes" && (
+        <div className="space-y-6">
+          {/* Top Banner / Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 font-semibold">{language === "bn" ? "মোট কুইজ বই / বিষয়" : "Total Quiz Books"}</p>
+                <p className="text-2xl font-black text-gray-900 mt-1">{quizBooks.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <BookOpen className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 font-semibold">{language === "bn" ? "মোট প্রশ্ন ব্যাংক সংখ্যা" : "Total Questions in Bank"}</p>
+                <p className="text-2xl font-black text-gray-900 mt-1">{questions.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <HelpCircle className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 font-semibold">{language === "bn" ? "অ্যাকশন" : "Actions"}</p>
+                <button
+                  onClick={fetchQuizData}
+                  disabled={loadingQuiz}
+                  className="mt-1 text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingQuiz ? "animate-spin" : ""}`} />
+                  <span>{loadingQuiz ? (language === "bn" ? "লোড হচ্ছে..." : "Loading...") : (language === "bn" ? "প্রশ্ন ব্যাংক রিফ্রেশ করুন" : "Refresh Question Bank")}</span>
+                </button>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                <Plus className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Creation Forms Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Form 1: Create Quiz Book */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-base font-bold text-gray-900">
+                  {language === "bn" ? "১. নতুন কুইজ বিষয় / বই তৈরি করুন" : "1. Create Quiz Subject / Book"}
+                </h3>
+              </div>
+
+              <form onSubmit={handleCreateQuizBook} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    {language === "bn" ? "বই / বিষয়ের নাম (বাংলা) *" : "Book Name (Bangla) *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="যেমন: সাধারণ জ্ঞান (বাংলাদেশ)"
+                    value={newBookNameBn}
+                    onChange={(e) => setNewBookNameBn(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    {language === "bn" ? "বইয়ের নাম (English)" : "Book Name (English)"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. General Knowledge (Bangladesh)"
+                    value={newBookNameEn}
+                    onChange={(e) => setNewBookNameEn(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    {language === "bn" ? "বিষয় ক্যাটাগরি (Subject)" : "Subject Category"}
+                  </label>
+                  <select
+                    value={newBookSubject}
+                    onChange={(e) => setNewBookSubject(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-indigo-500 focus:outline-none bg-white"
+                  >
+                    <option value="General Knowledge">সাধারণ জ্ঞান (General Knowledge)</option>
+                    <option value="Bangla">বাংলা ভাষা ও সাহিত্য (Bangla)</option>
+                    <option value="English">ইংরেজি (English Language)</option>
+                    <option value="Mathematics">গণিত ও মানসিক দক্ষতা (Math)</option>
+                    <option value="ICT & Computer">তথ্যপ্রযুক্তি ও কম্পিউটার (ICT)</option>
+                    <option value="Science">সাধারণ বিজ্ঞান (Science)</option>
+                    <option value="Others">অন্যান্য (Others)</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{language === "bn" ? "কুইজ বই যুক্ত করুন" : "Add Quiz Book"}</span>
+                </button>
+              </form>
+
+              {/* Existing Books List */}
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs font-bold text-gray-700 mb-2">
+                  {language === "bn" ? "বিদ্যমান বইসমূহ:" : "Existing Books:"}
+                </p>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {quizBooks.map((b) => (
+                    <div key={b.id} className="flex items-center justify-between p-2 rounded-xl bg-gray-50 text-xs">
+                      <div className="truncate mr-2">
+                        <p className="font-bold text-gray-900 truncate">{b.nameBn}</p>
+                        <p className="text-[10px] text-gray-500">{b._count?.questions || 0} টি প্রশ্ন</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteQuizBook(b.id, b.nameBn)}
+                        className="text-gray-400 hover:text-red-600 p-1 rounded-lg"
+                        title="Delete Book"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Form 2: Upload Question Form */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-gray-900">
+                  {language === "bn" ? "২. সরাসরি নতুন প্রশ্ন আপলোড করুন" : "2. Upload New Question to Bank"}
+                </h3>
+              </div>
+
+              <form onSubmit={handleCreateQuestion} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {language === "bn" ? "কুইজ বিষয় / বই সিলেক্ট করুন *" : "Select Quiz Book *"}
+                    </label>
+                    <select
+                      value={newQBookId}
+                      onChange={(e) => setNewQBookId(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none bg-white font-medium"
+                    >
+                      {quizBooks.length === 0 && <option value="">কোনো বই নেই - প্রথমে তৈরি করুন</option>}
+                      {quizBooks.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.nameBn} ({b.subject})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {language === "bn" ? "কাঠিন্যের মাত্রা (Difficulty)" : "Difficulty Level"}
+                    </label>
+                    <select
+                      value={newQDifficulty}
+                      onChange={(e) => setNewQDifficulty(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none bg-white"
+                    >
+                      <option value="EASY">সহজ (EASY)</option>
+                      <option value="MEDIUM">মাঝারি (MEDIUM)</option>
+                      <option value="HARD">কঠিন (HARD)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    {language === "bn" ? "প্রশ্ন (বাংলায়) *" : "Question Text (Bangla) *"}
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    placeholder="যেমন: বাংলাদেশের প্রথম রাষ্ট্রপতি কে ছিলেন?"
+                    value={newQTextBn}
+                    onChange={(e) => setNewQTextBn(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    {language === "bn" ? "প্রশ্ন (English - ঐচ্ছিক)" : "Question Text (English - Optional)"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Who was the first President of Bangladesh?"
+                    value={newQTextEn}
+                    onChange={(e) => setNewQTextEn(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* 4 Options */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {language === "bn" ? "অপশন ক (Option A) *" : "Option A *"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="অপশন ক"
+                      value={newQOptA}
+                      onChange={(e) => setNewQOptA(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {language === "bn" ? "অপশন খ (Option B) *" : "Option B *"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="অপশন খ"
+                      value={newQOptB}
+                      onChange={(e) => setNewQOptB(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {language === "bn" ? "অপশন গ (Option C)" : "Option C"}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="অপশন গ"
+                      value={newQOptC}
+                      onChange={(e) => setNewQOptC(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {language === "bn" ? "অপশন ঘ (Option D)" : "Option D"}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="অপশন ঘ"
+                      value={newQOptD}
+                      onChange={(e) => setNewQOptD(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Correct Option & Explanation */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-800 mb-1">
+                      {language === "bn" ? "সঠিক উত্তর নির্বাচন করুন *" : "Correct Answer *"}
+                    </label>
+                    <select
+                      value={newQCorrect}
+                      onChange={(e) => setNewQCorrect(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-bold rounded-xl border-2 border-emerald-400 focus:border-emerald-600 focus:outline-none bg-emerald-50/50 text-emerald-950"
+                    >
+                      <option value="A">অপশন ক (Option A)</option>
+                      <option value="B">অপশন খ (Option B)</option>
+                      <option value="C">অপশন গ (Option C)</option>
+                      <option value="D">অপশন ঘ (Option D)</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {language === "bn" ? "উত্তরের ব্যাখ্যা (ঐচ্ছিক)" : "Explanation (Optional)"}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="কেন এই উত্তরটি সঠিক তার সংক্ষিপ্ত ব্যাখ্যা"
+                      value={newQExplanationBn}
+                      onChange={(e) => setNewQExplanationBn(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={quizBooks.length === 0}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{language === "bn" ? "প্রশ্ন আপলোড ও অনুমোদন করুন" : "Upload & Approve Question"}</span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Question Bank List */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  {language === "bn" ? "বিদ্যমান প্রশ্ন ব্যাংক (Question Bank)" : "Live Question Bank"}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {language === "bn"
+                    ? "অনুমোদিত সকল প্রশ্ন সরাসরি কুইজ পরীক্ষায় অংশ নেওয়ার জন্য ব্যবহৃত হচ্ছে"
+                    : "All approved questions currently active for live user quiz attempts"}
+                </p>
+              </div>
+
+              {/* Filter by Book */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">
+                  {language === "bn" ? "বই ফিল্টার:" : "Filter:"}
+                </span>
+                <select
+                  value={selectedBookFilter}
+                  onChange={(e) => setSelectedBookFilter(e.target.value)}
+                  className="px-3 py-1.5 text-xs rounded-xl border border-gray-200 focus:border-emerald-500 focus:outline-none bg-white font-medium"
+                >
+                  <option value="">{language === "bn" ? "সকল বিষয় / বই" : "All Books"}</option>
+                  {quizBooks.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.nameBn}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Questions Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left text-gray-600">
+                <thead className="bg-gray-50 text-gray-900 uppercase font-bold text-[11px] border-b border-gray-200">
+                  <tr>
+                    <th className="py-3 px-4 w-12">#</th>
+                    <th className="py-3 px-4">কুইজ বিষয়</th>
+                    <th className="py-3 px-4">প্রশ্ন ও অপশনসমূহ</th>
+                    <th className="py-3 px-4">সঠিক উত্তর</th>
+                    <th className="py-3 px-4">ব্যাখ্যা</th>
+                    <th className="py-3 px-4 text-right">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {questions
+                    .filter((q) => !selectedBookFilter || q.bookId === selectedBookFilter)
+                    .map((q, idx) => (
+                      <tr key={q.id} className="hover:bg-gray-50/50">
+                        <td className="py-3 px-4 font-mono font-bold text-gray-400">{idx + 1}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold text-[10px]">
+                            {q.book?.nameBn || "বই"}
+                          </span>
+                          <span className="block text-[10px] text-gray-400 mt-0.5">{q.difficulty}</span>
+                        </td>
+                        <td className="py-3 px-4 max-w-md">
+                          <div className="font-bold text-gray-900 mb-1">{q.questionBn}</div>
+                          <div className="grid grid-cols-2 gap-1 text-[11px]">
+                            <span className={`px-2 py-0.5 rounded ${q.correctOption === "A" ? "bg-emerald-100 font-bold text-emerald-900 border border-emerald-300" : "bg-gray-100 text-gray-700"}`}>
+                              ক. {q.optionA}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded ${q.correctOption === "B" ? "bg-emerald-100 font-bold text-emerald-900 border border-emerald-300" : "bg-gray-100 text-gray-700"}`}>
+                              খ. {q.optionB}
+                            </span>
+                            {q.optionC && (
+                              <span className={`px-2 py-0.5 rounded ${q.correctOption === "C" ? "bg-emerald-100 font-bold text-emerald-900 border border-emerald-300" : "bg-gray-100 text-gray-700"}`}>
+                                গ. {q.optionC}
+                              </span>
+                            )}
+                            {q.optionD && (
+                              <span className={`px-2 py-0.5 rounded ${q.correctOption === "D" ? "bg-emerald-100 font-bold text-emerald-900 border border-emerald-300" : "bg-gray-100 text-gray-700"}`}>
+                                ঘ. {q.optionD}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800">
+                            {q.correctOption}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-gray-500 max-w-xs text-[11px]">
+                          {q.explanationBn || "—"}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteQuestion(q.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"
+                            title="Delete Question"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
