@@ -21,10 +21,19 @@ function JobsContent() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [category, setCategory] = useState(searchParams.get("category") || "");
-  const [district, setDistrict] = useState(searchParams.get("district") || "");
+  const [category, setCategory] = useState(searchParams.get("category") || searchParams.get("categoryId") || "");
+  const [district, setDistrict] = useState(searchParams.get("district") || searchParams.get("districtId") || "");
   const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
   const [applyResult, setApplyResult] = useState<{ id: string; text: string; error?: boolean } | null>(null);
+
+  useEffect(() => {
+    const urlCategory = searchParams.get("category") || searchParams.get("categoryId") || "";
+    const urlSearch = searchParams.get("search") || "";
+    const urlDistrict = searchParams.get("district") || searchParams.get("districtId") || "";
+    setCategory(urlCategory);
+    setSearch(urlSearch);
+    setDistrict(urlDistrict);
+  }, [searchParams]);
 
   const fetchJobs = () => {
     setLoading(true);

@@ -27,7 +27,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (categoryId) {
-      whereClause.categoryId = categoryId;
+      whereClause.category = {
+        OR: [{ id: categoryId }, { slug: categoryId }],
+      };
     }
 
     if (districtId) {

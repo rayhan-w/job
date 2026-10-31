@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "./LanguageContext";
-import { Search, Globe, User, Wallet, LogOut, ShieldAlert, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Globe, User, Wallet, LogOut, ShieldAlert, ArrowRight, Sparkles, HelpCircle } from "lucide-react";
 
 export function Header() {
   const { language, setLanguage, t } = useLanguage();
@@ -56,78 +56,56 @@ export function Header() {
         </div>
       )}
 
-      {/* Floating Pill Navigation Header matching uploaded mockup */}
-      <header className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full transition-all duration-200">
-        <div className="bg-white/95 backdrop-blur-md rounded-full border border-gray-200/80 shadow-lg shadow-orange-500/5 px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-9 h-9 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-xl flex items-center justify-center text-white font-extrabold text-base shadow-sm group-hover:scale-105 transition">
-              <span>W</span>
-            </div>
-            <div>
-              <div className="text-lg font-black text-gray-900 tracking-tight leading-none">
+      {/* Slim & Compact Floating Header */}
+      <header className="sticky top-3 z-50 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full transition-all duration-200">
+        <div className="bg-white/95 backdrop-blur-md rounded-full border border-gray-200/80 shadow-md shadow-orange-500/5 px-4 sm:px-5 h-13 flex items-center justify-between">
+          {/* Left Side: Brand Logo + Quiz Option */}
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shadow-sm group-hover:scale-105 transition">
+                <span>W</span>
+              </div>
+              <div className="text-base font-black text-gray-900 tracking-tight leading-none">
                 WO<span className="text-orange-600">JOB</span>
               </div>
-              <div className="text-[9px] font-semibold text-gray-400 tracking-wider uppercase">
-                {language === "bn" ? "ক্যারিয়ার পোর্টাল" : "Career Portal"}
-              </div>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Center Navigation Links (Pill style matching mockup) */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-semibold text-gray-600">
+            {/* Quiz Link directly on left side as requested */}
+            <Link
+              href="/quiz"
+              className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-200/80 transition shadow-xs"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-orange-600" />
+              <span>{language === "bn" ? "কুইজ" : "Quiz"}</span>
+            </Link>
+          </div>
+
+          {/* Center Navigation Links */}
+          <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-gray-600">
             <Link href="/" className="hover:text-orange-600 transition">
               {t("nav_home")}
             </Link>
             <Link href="/jobs" className="hover:text-orange-600 transition">
               {t("nav_jobs")}
             </Link>
-            <Link href="/quiz" className="hover:text-orange-600 transition">
-              {t("nav_quiz")}
-            </Link>
             <Link href="/products" className="hover:text-orange-600 transition">
               {t("nav_products")}
             </Link>
             <Link href="/contact" className="hover:text-orange-600 transition">
-              {t("nav_contact")}
+              {language === "bn" ? "যোগাযোগ" : "Contact"}
             </Link>
           </nav>
 
-          {/* Right Controls: Language Toggle & User / CTA */}
-          <div className="flex items-center gap-3">
-            {/* Language Switcher Pill */}
-            <div className="flex items-center bg-gray-100/90 rounded-full p-1 text-xs font-bold text-gray-600 border border-gray-200/50">
-              <button
-                onClick={() => setLanguage("bn")}
-                className={`px-2.5 py-1 rounded-full transition ${
-                  language === "bn"
-                    ? "bg-orange-600 text-white shadow-sm"
-                    : "hover:text-gray-900"
-                }`}
-              >
-                বাংলা
-              </button>
-              <button
-                onClick={() => setLanguage("en")}
-                className={`px-2.5 py-1 rounded-full transition ${
-                  language === "en"
-                    ? "bg-orange-600 text-white shadow-sm"
-                    : "hover:text-gray-900"
-                }`}
-              >
-                EN
-              </button>
-            </div>
-
-            {/* Auth Buttons / User Area */}
+          {/* Right Side: Login & Register (নিবন্ধন করুন) */}
+          <div className="flex items-center gap-2">
             {loading ? (
-              <div className="w-20 h-9 bg-gray-100 animate-pulse rounded-full" />
+              <div className="w-20 h-7 bg-gray-100 animate-pulse rounded-full" />
             ) : user ? (
               <div className="flex items-center gap-2">
                 {/* Wallet Shortcut */}
                 <Link
                   href="/dashboard/wallet"
-                  className="hidden sm:flex items-center gap-1.5 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-full border border-orange-200 text-xs font-bold hover:bg-orange-100 transition"
+                  className="hidden sm:flex items-center gap-1 bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full border border-orange-200 text-xs font-bold hover:bg-orange-100 transition"
                 >
                   <Wallet className="w-3.5 h-3.5 text-orange-600" />
                   <span>৳ {user.wallet?.balance?.toLocaleString() || "0"}</span>
@@ -136,7 +114,7 @@ export function Header() {
                 {/* Dashboard Pill */}
                 <Link
                   href={user.role === "SUPER_ADMIN" || user.role === "ADMIN_STAFF" ? "/admin" : "/dashboard"}
-                  className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-800 transition"
+                  className="flex items-center gap-1.5 bg-gray-900 text-white px-3.5 py-1.5 rounded-full text-xs font-bold hover:bg-gray-800 transition"
                 >
                   <User className="w-3.5 h-3.5" />
                   <span>{user.name.split(" ")[0]}</span>
@@ -146,24 +124,24 @@ export function Header() {
                 <button
                   onClick={handleLogout}
                   title="Logout"
-                  className="p-1.5 text-gray-400 hover:text-red-600 rounded-full transition"
+                  className="p-1 text-gray-400 hover:text-red-600 rounded-full transition"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Link
                   href="/login"
-                  className="text-gray-700 hover:text-orange-600 px-3 py-2 text-xs font-bold transition"
+                  className="text-gray-700 hover:text-orange-600 px-3 py-1.5 text-xs font-bold transition"
                 >
-                  {t("nav_login")}
+                  {language === "bn" ? "লগইন" : "Login"}
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-full text-xs font-bold transition shadow-sm shadow-orange-500/20 flex items-center gap-1.5"
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-sm shadow-orange-500/20 flex items-center gap-1"
                 >
-                  <span>{language === "bn" ? "নিবন্ধন করুন" : "Hire Now"}</span>
+                  <span>{language === "bn" ? "নিবন্ধন করুন" : "Register"}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
