@@ -15,17 +15,25 @@ import {
   LogIn,
   RefreshCw,
   Plus,
+  Trash2,
 } from "lucide-react";
 
 export default function AdminPage() {
   const { language } = useLanguage();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "commission" | "users">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "commission" | "users" | "categories">("overview");
 
   // Data states
   const [reportData, setReportData] = useState<any>(null);
   const [commissionSettings, setCommissionSettings] = useState<any>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  // Category management states
+  const [categories, setCategories] = useState<any[]>([]);
+  const [newCatNameBn, setNewCatNameBn] = useState("");
+  const [newCatNameEn, setNewCatNameEn] = useState("");
+  const [newCatSlug, setNewCatSlug] = useState("");
+  const [newCatIcon, setNewCatIcon] = useState("Briefcase");
 
   const fetchAdminData = async () => {
     try {
@@ -44,6 +52,59 @@ export default function AdminPage() {
       // Fetch commission settings
       const commRes = await fetch("/api/admin/commission");
       if (commRes.ok) setCommissionSettings(await commRes.json());
+
+      // Fetch categories
+      fetchCategories();
+    } catch {
+      //
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories");
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data.categories || []);
+      }
+    } catch {
+      //
+    }
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nameBn: newCatNameBn,
+          nameEn: newCatNameEn || newCatNameBn,
+          slug: newCatSlug,
+          icon: newCatIcon,
+        }),
+      });
+      if (res.ok) {
+        setActionMessage(language === "bn" ? "নতুন ক্যাটাগরি তৈরি হয়েছে!" : "New category created successfully!");
+        setNewCatNameBn("");
+        setNewCatNameEn("");
+        setNewCatSlug("");
+        fetchCategories();
+      }
+    } catch {
+      //
+    }
+  };
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    if (!confirm(language === "bn" ? `আপনি কি '${name}' মুছে ফেলতে চান?` : `Delete category '${name}'?`)) return;
+    try {
+      const res = await fetch(`/api/categories?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setActionMessage(language === "bn" ? "ক্যাটাগরি মুছে ফেলা হয়েছে!" : "Category deleted successfully!");
+        fetchCategories();
+      }
     } catch {
       //
     }
@@ -161,6 +222,17 @@ export default function AdminPage() {
             }`}
           >
             {language === "bn" ? "ইউজার ও লগইন-অ্যাজ" : "Users & Login-As"}
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("categories");
+              fetchCategories();
+            }}
+            className={`px-3.5 py-2 rounded-xl transition ${
+              activeTab === "categories" ? "bg-white text-slate-900" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+            }`}
+          >
+            {language === "bn" ? "ক্যাটাগরি ম্যানেজমেন্ট" : "Categories"}
           </button>
         </div>
       </div>
@@ -366,6 +438,146 @@ export default function AdminPage() {
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Login as</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. CATEGORIES MANAGEMENT TAB (Fix 1: dynamic admin-managed categories) */}
+      {activeTab === "categories" && (
+        <div className="space-y-6">
+          {/* Add Category Form */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-orange-600" />
+              <span>{language === "bn" ? "নতুন ক্যাটাগরি তৈরি করুন" : "Add New Job Category"}</span>
+            </h3>
+
+            <form onSubmit={handleAddCategory} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  {language === "bn" ? "নাম (বাংলা)" : "Name (Bangla)"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="উদা: এনজিও / ব্যাংক"
+                  value={newCatNameBn}
+                  onChange={(e) => setNewCatNameBn(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  {language === "bn" ? "নাম (English)" : "Name (English)"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. NGO / Bank"
+                  value={newCatNameEn}
+                  onChange={(e) => setNewCatNameEn(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  {language === "bn" ? "স্লাগ (Slug - unique)" : "Slug (unique URL tag)"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. ngo / bank"
+                  value={newCatSlug}
+                  onChange={(e) => setNewCatSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  {language === "bn" ? "আইকন" : "Icon"}
+                </label>
+                <select
+                  value={newCatIcon}
+                  onChange={(e) => setNewCatIcon(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
+                >
+                  <option value="Briefcase">Briefcase (Bank/General)</option>
+                  <option value="Users">Users (NGO)</option>
+                  <option value="Landmark">Landmark (Govt)</option>
+                  <option value="Building2">Building (Private)</option>
+                  <option value="Sprout">Sprout (Agro)</option>
+                  <option value="Fish">Fish (Fisheries)</option>
+                  <option value="Laptop">Laptop (IT)</option>
+                  <option value="Folder">Folder (Others)</option>
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{language === "bn" ? "ক্যাটাগরি যুক্ত করুন" : "Add Category"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Existing Categories Table */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">
+                {language === "bn" ? "বিদ্যমান ক্যাটাগরি ও রিয়েল লাইভ জব কাউন্ট" : "Live Categories & Job Counts"}
+              </h3>
+              <button
+                onClick={fetchCategories}
+                className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{language === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left text-gray-600">
+                <thead className="bg-gray-50 text-gray-900 uppercase font-bold text-[11px] border-b border-gray-200">
+                  <tr>
+                    <th className="py-3 px-4">ক্যাটাগরি নাম (বাংলা)</th>
+                    <th className="py-3 px-4">Name (English)</th>
+                    <th className="py-3 px-4">স্লাগ (Slug)</th>
+                    <th className="py-3 px-4">লাইভ জব কাউন্ট (Real Count)</th>
+                    <th className="py-3 px-4 text-right">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {categories.map((c) => (
+                    <tr key={c.id} className="hover:bg-gray-50/50">
+                      <td className="py-3 px-4 font-bold text-gray-900">{c.nameBn}</td>
+                      <td className="py-3 px-4">{c.nameEn}</td>
+                      <td className="py-3 px-4 font-mono text-gray-500">{c.slug}</td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">
+                          {c.jobCount} টি চাকরি
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => handleDeleteCategory(c.id, c.nameBn)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

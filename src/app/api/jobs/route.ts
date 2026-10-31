@@ -18,6 +18,10 @@ export async function GET(req: NextRequest) {
       status,
     };
 
+    if (status === "PUBLISHED") {
+      whereClause.deadline = { gte: new Date() };
+    }
+
     if (search) {
       whereClause.OR = [
         { titleBn: { contains: search, mode: "insensitive" } },

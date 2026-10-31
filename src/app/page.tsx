@@ -23,11 +23,31 @@ import {
   CalendarDays,
   Video,
   UserCheck,
+  Laptop,
+  Users,
 } from "lucide-react";
+
+function toBanglaNumber(num: number): string {
+  const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+  return num.toString().replace(/\d/g, (d) => bnDigits[parseInt(d, 10)]);
+}
+
+function getCategoryIcon(slug: string, icon?: string) {
+  const key = (icon || slug || "").toLowerCase();
+  if (key.includes("landmark") || key.includes("govt")) return <Landmark className="w-6 h-6 text-purple-600" />;
+  if (key.includes("building") || key.includes("private")) return <Building2 className="w-6 h-6 text-blue-600" />;
+  if (key.includes("sprout") || key.includes("krishi")) return <Sprout className="w-6 h-6 text-amber-600" />;
+  if (key.includes("fish") || key.includes("motso")) return <Fish className="w-6 h-6 text-sky-600" />;
+  if (key.includes("laptop") || key.includes("it")) return <Laptop className="w-6 h-6 text-indigo-600" />;
+  if (key.includes("briefcase") || key.includes("bank")) return <Briefcase className="w-6 h-6 text-emerald-600" />;
+  if (key.includes("users") || key.includes("ngo")) return <Users className="w-6 h-6 text-rose-600" />;
+  return <Folder className="w-6 h-6 text-orange-600" />;
+}
 
 export default function HomePage() {
   const { language, t } = useLanguage();
   const [jobs, setJobs] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
@@ -39,6 +59,12 @@ export default function HomePage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.jobs) setJobs(data.jobs);
+      });
+
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.categories) setCategories(data.categories);
       });
   }, []);
 
@@ -84,21 +110,17 @@ export default function HomePage() {
       {/* 1. SEARCH SECTION in Card Style (owner liked this card style) */}
       <section id="search-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-24">
         <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xl shadow-orange-500/5 p-6 sm:p-8 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-100 pb-3">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                <Search className="w-5 h-5 text-orange-600" />
-                <span>{language === "bn" ? "চাকরি খুঁজুন" : "Search Jobs"}</span>
-              </h1>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {language === "bn"
-                  ? "পদবী, প্রতিষ্ঠান, ক্যাটাগরি বা জেলা দিয়ে সহজে সরকারি, বেসরকারি, কৃষি ও মৎস্য চাকরি খুঁজুন"
-                  : "Find circulars across Government, Private, Agriculture & Fisheries sectors"}
-              </p>
-            </div>
-            <span className="self-start sm:self-center bg-orange-50 text-orange-700 text-[11px] font-bold px-3 py-1 rounded-full border border-orange-200">
-              {language === "bn" ? "১-ক্লিক আবেদন সক্রিয়" : "1-Click Apply Ready"}
-            </span>
+          {/* FIX 2: Badge "১-ক্লিক আবেদন সক্রিয়" completely removed */}
+          <div className="border-b border-gray-100 pb-3">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <Search className="w-5 h-5 text-orange-600" />
+              <span>{language === "bn" ? "চাকরি খুঁজুন" : "Search Jobs"}</span>
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {language === "bn"
+                ? "পদবী, প্রতিষ্ঠান, ক্যাটাগরি বা জেলা দিয়ে সহজে সরকারি, বেসরকারি, কৃষি ও মৎস্য চাকরি খুঁজুন"
+                : "Find circulars across Government, Private, Agriculture & Fisheries sectors"}
+            </p>
           </div>
 
           <form
@@ -120,7 +142,7 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Category Select */}
+            {/* Category Select - Data-driven from database categories */}
             <div className="flex items-center px-3 py-2.5 w-full md:w-52 rounded-2xl bg-gray-50 border border-gray-200 focus-within:border-orange-500 focus-within:bg-white transition">
               <select
                 value={selectedCategory}
@@ -128,12 +150,11 @@ export default function HomePage() {
                 className="w-full text-gray-700 text-sm bg-transparent focus:outline-none font-medium"
               >
                 <option value="">{t("all_categories")}</option>
-                <option value="govt">{language === "bn" ? "সরকারি" : "Government"}</option>
-                <option value="private">{language === "bn" ? "বেসরকারি" : "Private"}</option>
-                <option value="krishi">{language === "bn" ? "কৃষি" : "Agriculture"}</option>
-                <option value="motso">{language === "bn" ? "মৎস্য" : "Fisheries"}</option>
-                <option value="it">{language === "bn" ? "তথ্যপ্রযুক্তি" : "Technology & IT"}</option>
-                <option value="others">{language === "bn" ? "অন্যান্য" : "Others"}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.slug}>
+                    {language === "bn" ? c.nameBn : c.nameEn || c.nameBn}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -164,7 +185,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. JOB CATEGORIES directly below the search section */}
+      {/* 2. JOB CATEGORIES directly below the search section - Live counts from Database (Fix 1) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -187,101 +208,35 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* 1. সরকারি */}
-          <Link
-            href="/jobs?category=govt"
-            className="group bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:border-orange-300 transition flex items-center gap-3.5"
-          >
-            <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-              <Landmark className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-bold text-gray-900 group-hover:text-orange-600 transition text-sm">
-                {language === "bn" ? "সরকারি" : "Government"}
-              </div>
-              <div className="text-[11px] text-gray-400 font-medium mt-0.5">
-                2,450+ {language === "bn" ? "চাকরি" : "Jobs"}
-              </div>
-            </div>
-          </Link>
-
-          {/* 2. বেসরকারি */}
-          <Link
-            href="/jobs?category=private"
-            className="group bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:border-orange-300 transition flex items-center gap-3.5"
-          >
-            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-bold text-gray-900 group-hover:text-orange-600 transition text-sm">
-                {language === "bn" ? "বেসরকারি" : "Private"}
-              </div>
-              <div className="text-[11px] text-gray-400 font-medium mt-0.5">
-                5,320+ {language === "bn" ? "চাকরি" : "Jobs"}
-              </div>
-            </div>
-          </Link>
-
-          {/* 3. কৃষি (Agriculture) - NEW */}
-          <Link
-            href="/jobs?category=krishi"
-            className="group bg-white p-5 rounded-2xl border border-orange-200 shadow-xs hover:shadow-md hover:border-orange-400 transition flex items-center gap-3.5 bg-gradient-to-br from-white to-orange-50/20"
-          >
-            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-              <Sprout className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-bold text-gray-900 group-hover:text-orange-600 transition text-sm flex items-center gap-1.5">
-                <span>{language === "bn" ? "কৃষি" : "Agriculture"}</span>
-                <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded">
-                  NEW
-                </span>
-              </div>
-              <div className="text-[11px] text-gray-500 font-medium mt-0.5">
-                1,840+ {language === "bn" ? "চাকরি" : "Jobs"}
-              </div>
-            </div>
-          </Link>
-
-          {/* 4. মৎস্য (Fisheries) - NEW */}
-          <Link
-            href="/jobs?category=motso"
-            className="group bg-white p-5 rounded-2xl border border-sky-200 shadow-xs hover:shadow-md hover:border-sky-400 transition flex items-center gap-3.5 bg-gradient-to-br from-white to-sky-50/20"
-          >
-            <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-              <Fish className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-bold text-gray-900 group-hover:text-orange-600 transition text-sm flex items-center gap-1.5">
-                <span>{language === "bn" ? "মৎস্য" : "Fisheries"}</span>
-                <span className="text-[9px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.2 rounded">
-                  NEW
-                </span>
-              </div>
-              <div className="text-[11px] text-gray-500 font-medium mt-0.5">
-                920+ {language === "bn" ? "চাকরি" : "Jobs"}
-              </div>
-            </div>
-          </Link>
-
-          {/* 5. অন্যান্য / টেক */}
-          <Link
-            href="/jobs?category=others"
-            className="group bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:border-orange-300 transition flex items-center gap-3.5"
-          >
-            <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-              <Folder className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-bold text-gray-900 group-hover:text-orange-600 transition text-sm">
-                {language === "bn" ? "অন্যান্য" : "Others"}
-              </div>
-              <div className="text-[11px] text-gray-400 font-medium mt-0.5">
-                760+ {language === "bn" ? "চাকরি" : "Jobs"}
-              </div>
-            </div>
-          </Link>
+          {categories.map((cat) => {
+            const isNew = cat.slug === "krishi" || cat.slug === "motso";
+            return (
+              <Link
+                key={cat.id}
+                href={`/jobs?category=${cat.slug}`}
+                className="group bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs hover:shadow-md hover:border-orange-300 transition flex items-center gap-3.5"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center group-hover:scale-105 transition shrink-0">
+                  {getCategoryIcon(cat.slug, cat.icon)}
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900 group-hover:text-orange-600 transition text-sm flex items-center gap-1.5">
+                    <span>{language === "bn" ? cat.nameBn : cat.nameEn || cat.nameBn}</span>
+                    {isNew && (
+                      <span className="text-[9px] bg-orange-100 text-orange-800 font-bold px-1.5 py-0.2 rounded">
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-gray-500 font-medium mt-0.5">
+                    {language === "bn"
+                      ? `${toBanglaNumber(cat.jobCount)}টি চাকরি`
+                      : `${cat.jobCount} ${cat.jobCount === 1 ? "Job" : "Jobs"}`}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -547,7 +502,7 @@ export default function HomePage() {
                   </div>
                   <div className="text-[10px] text-gray-500">Wednesday • 10:30 AM</div>
                   <button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-1 rounded-lg text-[10px] transition flex items-center justify-center gap-1">
-                    <Video className="w-3 h-3" />
+                    <Video className="w-3.5 h-3.5" />
                     <span>Join Now</span>
                   </button>
                 </div>
