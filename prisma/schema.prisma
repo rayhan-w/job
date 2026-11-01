@@ -20,6 +20,9 @@ model User {
   language      String      @default("bn")       // bn or en
   status        String      @default("ACTIVE")   // ACTIVE, INACTIVE, BLOCKED
   avatarUrl     String?     @map("avatar_url")
+  termsAccepted Boolean     @default(false)      @map("terms_accepted")
+  termsAcceptedAt DateTime? @map("terms_accepted_at")
+  termsPolicyVersion String? @default("v1.0")    @map("terms_policy_version")
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
 
@@ -685,4 +688,15 @@ model AuditLog {
   user User? @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_reset_tokens")
 }

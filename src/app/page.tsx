@@ -289,7 +289,9 @@ export default function HomePage() {
 
                   {/* Title & Organization */}
                   <h3 className="mt-3.5 font-black text-gray-900 text-base line-clamp-1 group-hover:text-orange-600 transition">
-                    {language === "bn" ? job.titleBn : job.titleEn || job.titleBn}
+                    <Link href={`/jobs/${job.id}`}>
+                      {language === "bn" ? job.titleBn : job.titleEn || job.titleBn}
+                    </Link>
                   </h3>
                   <p className="text-xs text-gray-500 font-medium mt-1">
                     {job.organizationName}
@@ -319,19 +321,14 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* 1-Click Apply Button */}
+                {/* View Details / Apply Button */}
                 <div className="mt-5 pt-3.5 border-t border-gray-100">
-                  <button
-                    onClick={() => handleApply(job.id)}
-                    disabled={applyingJobId === job.id}
+                  <Link
+                    href={`/jobs/${job.id}`}
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2"
                   >
-                    <span>
-                      {applyingJobId === job.id
-                        ? (language === "bn" ? "আবেদন হচ্ছে..." : "Applying...")
-                        : t("apply_now")}
-                    </span>
-                  </button>
+                    <span>{t("apply_now")}</span>
+                  </Link>
 
                   {applyMessage && applyMessage.id === job.id && (
                     <p

@@ -67,7 +67,7 @@ export function Footer() {
                 ? "বাংলাদেশের সরকারি, বেসরকারি, কৃষি ও মৎস্য সেক্টরের চাকরির সর্বাধুনিক পোর্টাল। একবার প্রোফাইল বানান, ১ ক্লিকে আবেদন করুন।"
                 : "Modern portal for Government, Private, Agriculture, and Fisheries jobs in Bangladesh. Build your portfolio once, apply in 1-click."}
             </p>
-            <div className="mt-4 flex flex-wrap gap-3 text-xs text-gray-400">
+            <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-400">
               <Link href="/about" className="hover:text-orange-400 underline underline-offset-4">
                 {language === "bn" ? "আমাদের সম্পর্কে" : "About Us"}
               </Link>
@@ -78,6 +78,14 @@ export function Footer() {
               <span>•</span>
               <Link href="/privacy" className="hover:text-orange-400 underline underline-offset-4">
                 {language === "bn" ? "গোপনীয়তা নীতি" : "Privacy Policy"}
+              </Link>
+              <span>•</span>
+              <Link href="/terms" className="hover:text-orange-400 underline underline-offset-4">
+                {language === "bn" ? "শর্তাবলী" : "Terms & Conditions"}
+              </Link>
+              <span>•</span>
+              <Link href="/refund" className="hover:text-orange-400 underline underline-offset-4">
+                {language === "bn" ? "রিফান্ড নীতি" : "Refund Policy"}
               </Link>
             </div>
           </div>

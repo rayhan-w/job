@@ -5,11 +5,18 @@ import { ensureWallet } from "@/lib/wallet";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, password, refCode, role = "CUSTOMER" } = await req.json();
+    const { name, phone, password, email, refCode, role = "CUSTOMER", termsAccepted } = await req.json();
 
     if (!phone || !password || !name) {
       return NextResponse.json(
         { error: "Name, phone, and password are required." },
+        { status: 400 }
+      );
+    }
+
+    if (!termsAccepted) {
+      return NextResponse.json(
+        { error: "You must accept the Terms & Conditions, Privacy Policy, and Refund Policy to register." },
         { status: 400 }
       );
     }
@@ -23,6 +30,18 @@ export async function POST(req: NextRequest) {
         { error: "Phone number is already registered." },
         { status: 409 }
       );
+    }
+
+    if (email) {
+      const existingEmail = await prisma.user.findUnique({
+        where: { email: email.toLowerCase().trim() },
+      });
+      if (existingEmail) {
+        return NextResponse.json(
+          { error: "Email is already registered." },
+          { status: 409 }
+        );
+      }
     }
 
     const passwordHash = await hashPassword(password);
@@ -51,8 +70,12 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         phone,
+        email: email ? email.toLowerCase().trim() : undefined,
         passwordHash,
         role: role,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
+        termsPolicyVersion: "v1.0",
         customer:
           role === "CUSTOMER" && targetAgent
             ? {

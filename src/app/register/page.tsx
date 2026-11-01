@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/LanguageContext";
-import { User, Phone, Lock, Share2, AlertCircle } from "lucide-react";
+import { User, Phone, Lock, Share2, AlertCircle, Mail, ShieldCheck } from "lucide-react";
 
 function RegisterContent() {
   const { language } = useLanguage();
@@ -12,8 +12,10 @@ function RegisterContent() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [refCode, setRefCode] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,8 +28,18 @@ function RegisterContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+
+    if (!termsAccepted) {
+      setError(
+        language === "bn"
+          ? "রেজিস্ট্রেশন সম্পন্ন করতে ব্যবহারের শর্তাবলী, গোপনীয়তা নীতি এবং রিফান্ড নীতিতে টিক দিয়ে সম্মতি জানান।"
+          : "Please check the box to agree to the Terms & Conditions, Privacy Policy, and Refund Policy."
+      );
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -36,8 +48,10 @@ function RegisterContent() {
         body: JSON.stringify({
           name,
           phone,
+          email: email.trim() || undefined,
           password,
           refCode: refCode.trim() || undefined,
+          termsAccepted: true,
         }),
       });
       const data = await res.json();
@@ -115,6 +129,27 @@ function RegisterContent() {
 
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">
+              {language === "bn" ? "ইমেইল ঠিকানা (ঐচ্ছিক)" : "Email Address (Optional)"}
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+              <input
+                type="email"
+                placeholder="example@mail.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">
+              {language === "bn"
+                ? "* পাসওয়ার্ড ভুলে গেলে রিকভারির জন্য ইমেইল ব্যবহার করা যাবে।"
+                : "* Useful for password recovery if you forget your credentials."}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
               {language === "bn" ? "পাসওয়ার্ড" : "Password"}
             </label>
             <div className="relative">
@@ -151,6 +186,54 @@ function RegisterContent() {
                   : "* Without a referral code, you will automatically be assigned under the default agent."}
               </p>
             )}
+          </div>
+
+          {/* Terms, Privacy Policy, and Refund Policy Agreement Checkbox */}
+          <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/80">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                required
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-1 w-4 h-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                {language === "bn" ? (
+                  <>
+                    আমি WOJOB-এর{" "}
+                    <Link href="/terms" target="_blank" className="font-bold text-blue-600 hover:underline">
+                      শর্তাবলী
+                    </Link>
+                    ,{" "}
+                    <Link href="/privacy" target="_blank" className="font-bold text-blue-600 hover:underline">
+                      গোপনীয়তা নীতি
+                    </Link>{" "}
+                    এবং{" "}
+                    <Link href="/refund" target="_blank" className="font-bold text-blue-600 hover:underline">
+                      রিফান্ড নীতি
+                    </Link>{" "}
+                    পড়েছি এবং শর্তগুলো মেনে নিচ্ছি।
+                  </>
+                ) : (
+                  <>
+                    I have read and agree to the{" "}
+                    <Link href="/terms" target="_blank" className="font-bold text-blue-600 hover:underline">
+                      Terms & Conditions
+                    </Link>
+                    ,{" "}
+                    <Link href="/privacy" target="_blank" className="font-bold text-blue-600 hover:underline">
+                      Privacy Policy
+                    </Link>
+                    , and{" "}
+                    <Link href="/refund" target="_blank" className="font-bold text-blue-600 hover:underline">
+                      Refund Policy
+                    </Link>
+                    .
+                  </>
+                )}
+              </span>
+            </label>
           </div>
 
           <button

@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session || (session.role !== "SUPER_ADMIN" && session.role !== "ADMIN_STAFF")) {
+      return NextResponse.json({ error: "Unauthorized: Admin access required" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const bookId = searchParams.get("bookId");
     const status = searchParams.get("status");

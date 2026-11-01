@@ -4,17 +4,26 @@ import { verifyPassword, signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { phone, password } = await req.json();
+    const { phone, identifier: rawId, password } = await req.json();
+    const identifier = (phone || rawId || "").trim();
 
-    if (!phone || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
-        { error: "Phone and password are required" },
+        { error: "Phone/Email and password are required" },
         { status: 400 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { phone },
+    const isEmail = identifier.includes("@");
+    const user = await prisma.user.findFirst({
+      where: isEmail
+        ? { email: identifier.toLowerCase() }
+        : {
+            OR: [
+              { phone: identifier },
+              { email: identifier.toLowerCase() },
+            ],
+          },
       include: {
         wallet: true,
       },
@@ -22,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid phone number or password" },
+        { error: "Invalid phone/email or password" },
         { status: 401 }
       );
     }
@@ -30,7 +39,7 @@ export async function POST(req: NextRequest) {
     const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
       return NextResponse.json(
-        { error: "Invalid phone number or password" },
+        { error: "Invalid phone/email or password" },
         { status: 401 }
       );
     }

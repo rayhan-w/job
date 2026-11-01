@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -51,6 +52,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session || (session.role !== "SUPER_ADMIN" && session.role !== "ADMIN_STAFF")) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Admin access required" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { nameBn, nameEn, slug, icon } = body;
 
@@ -88,6 +94,11 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session || (session.role !== "SUPER_ADMIN" && session.role !== "ADMIN_STAFF")) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Admin access required" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     let id = searchParams.get("id");
     let slug = searchParams.get("slug");

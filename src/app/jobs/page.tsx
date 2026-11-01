@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/LanguageContext";
 import {
@@ -164,8 +165,10 @@ function JobsContent() {
                     </span>
                   </div>
 
-                  <h3 className="mt-4 font-black text-gray-900 text-lg line-clamp-1">
-                    {language === "bn" ? job.titleBn : job.titleEn || job.titleBn}
+                  <h3 className="mt-4 font-black text-gray-900 text-lg line-clamp-1 hover:text-orange-600 transition">
+                    <Link href={`/jobs/${job.id}`}>
+                      {language === "bn" ? job.titleBn : job.titleEn || job.titleBn}
+                    </Link>
                   </h3>
                   <p className="text-xs text-gray-500 font-medium mt-1">
                     {job.organizationName}
@@ -200,23 +203,12 @@ function JobsContent() {
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => handleApply(job.id)}
-                    disabled={applyingJobId === job.id}
+                  <Link
+                    href={`/jobs/${job.id}`}
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2"
                   >
-                    <span>{applyingJobId === job.id ? (language === "bn" ? "আবেদন হচ্ছে..." : "Applying...") : t("apply_now")}</span>
-                  </button>
-
-                  {applyResult && applyResult.id === job.id && (
-                    <p
-                      className={`text-xs mt-2 text-center font-medium ${
-                        applyResult.error ? "text-red-600" : "text-orange-600"
-                      }`}
-                    >
-                      {applyResult.text}
-                    </p>
-                  )}
+                    <span>{t("apply_now")}</span>
+                  </Link>
                 </div>
               </div>
             );

@@ -71,14 +71,14 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">
-              {language === "bn" ? "ফোন নম্বর" : "Phone Number"}
+              {language === "bn" ? "ফোন নম্বর অথবা ইমেইল" : "Phone Number or Email"}
             </label>
             <div className="relative">
               <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
               <input
                 type="text"
                 required
-                placeholder="017xxxxxxxx"
+                placeholder={language === "bn" ? "017xxxxxxxx বা name@example.com" : "017xxxxxxxx or name@example.com"}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none"
@@ -87,9 +87,17 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              {language === "bn" ? "পাসওয়ার্ড" : "Password"}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-gray-700">
+                {language === "bn" ? "পাসওয়ার্ড" : "Password"}
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 hover:underline"
+              >
+                {language === "bn" ? "পাসওয়ার্ড ভুলে গেছেন?" : "Forgot password?"}
+              </Link>
+            </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
               <input

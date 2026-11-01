@@ -19,6 +19,18 @@ import {
 export default function DashboardPage() {
   const { language, t } = useLanguage();
   const [userData, setUserData] = useState<any>(null);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [counts, setCounts] = useState<{
+    totalApplications: number;
+    totalShortlisted: number;
+    totalInterview: number;
+    totalQuizAttempts: number;
+  }>({
+    totalApplications: 0,
+    totalShortlisted: 0,
+    totalInterview: 0,
+    totalQuizAttempts: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +39,13 @@ export default function DashboardPage() {
       .then((data) => {
         if (data && data.authenticated) {
           setUserData(data.user);
+          fetch("/api/applications")
+            .then((res) => res.json())
+            .then((appData) => {
+              if (appData.applications) setApplications(appData.applications);
+              if (appData.counts) setCounts(appData.counts);
+            })
+            .catch(() => {});
         } else {
           window.location.href = "/login";
         }
@@ -43,8 +62,8 @@ export default function DashboardPage() {
     );
   }
 
-  const completeness = userData?.candidateProfile?.completeness ?? 78;
-  const walletBalance = userData?.wallet?.balance ?? 2450;
+  const completeness = userData?.candidateProfile?.completeness ?? 0;
+  const walletBalance = userData?.wallet?.balance ?? 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -59,8 +78,8 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">
                 {language === "bn"
-                  ? `শুভ সকাল, ${userData?.name || "রাহাতুল ইসলাম"}!`
-                  : `Good morning, ${userData?.name || "Rahatul Islam"}!`}
+                  ? `শুভ দিন, ${userData?.name || "ব্যবহারকারী"}!`
+                  : `Hello, ${userData?.name || "User"}!`}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
                 {language === "bn"
@@ -156,7 +175,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* 4 Stat Badges matching screenshot */}
+          {/* 4 Stat Badges */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
@@ -166,7 +185,9 @@ export default function DashboardPage() {
                 <div className="text-xs text-gray-500 font-medium">
                   {language === "bn" ? "মোট আবেদন" : "Total Applied"}
                 </div>
-                <div className="text-xl font-black text-gray-900 mt-0.5">12</div>
+                <div className="text-xl font-black text-gray-900 mt-0.5">
+                  {counts.totalApplications}
+                </div>
               </div>
             </div>
 
@@ -176,9 +197,11 @@ export default function DashboardPage() {
               </div>
               <div>
                 <div className="text-xs text-gray-500 font-medium">
-                  {language === "bn" ? "সংরক্ষিত চাকরি" : "Saved Jobs"}
+                  {language === "bn" ? "শর্টলিস্টেড" : "Shortlisted"}
                 </div>
-                <div className="text-xl font-black text-gray-900 mt-0.5">8</div>
+                <div className="text-xl font-black text-gray-900 mt-0.5">
+                  {counts.totalShortlisted}
+                </div>
               </div>
             </div>
 
@@ -190,7 +213,9 @@ export default function DashboardPage() {
                 <div className="text-xs text-gray-500 font-medium">
                   {language === "bn" ? "কুইজ চেষ্টা" : "Quiz Attempts"}
                 </div>
-                <div className="text-xl font-black text-gray-900 mt-0.5">3</div>
+                <div className="text-xl font-black text-gray-900 mt-0.5">
+                  {counts.totalQuizAttempts}
+                </div>
               </div>
             </div>
 
@@ -200,14 +225,16 @@ export default function DashboardPage() {
               </div>
               <div>
                 <div className="text-xs text-gray-500 font-medium">
-                  {language === "bn" ? "রেফারেল" : "Referrals"}
+                  {language === "bn" ? "ইন্টারভিউ" : "Interviews"}
                 </div>
-                <div className="text-xl font-black text-gray-900 mt-0.5">1</div>
+                <div className="text-xl font-black text-gray-900 mt-0.5">
+                  {counts.totalInterview}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Recent Applications Table matching screenshot */}
+          {/* Recent Applications Table */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-lg font-black text-gray-900">
@@ -233,64 +260,92 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {language === "bn" ? "সহকারী পরিচালক" : "Assistant Director"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {language === "bn" ? "বাংলাদেশ সরকারি কর্ম কমিশন" : "Bangladesh Public Service Commission"}
-                    </td>
-                    <td className="px-6 py-4 text-xs text-gray-500">
-                      {language === "bn" ? "১০ জুন ২০২৬" : "10 Jun 2026"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {language === "bn" ? "আবেদন জমা হয়েছে" : "Applied"}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {language === "bn" ? "সফটওয়্যার ইঞ্জিনিয়ার" : "Software Engineer"}
-                    </td>
-                    <td className="px-6 py-4">BRACNet</td>
-                    <td className="px-6 py-4 text-xs text-gray-500">
-                      {language === "bn" ? "৪ জুন ২০২৬" : "04 Jun 2026"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        {language === "bn" ? "দেখা হয়েছে" : "Viewed"}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {language === "bn" ? "প্রবেশনারি অফিসার" : "Probationary Officer"}
-                    </td>
-                    <td className="px-6 py-4">Eastern Bank PLC</td>
-                    <td className="px-6 py-4 text-xs text-gray-500">
-                      {language === "bn" ? "৩ জুন ২০২৬" : "03 Jun 2026"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        {language === "bn" ? "শর্টলিস্টেড" : "Shortlisted"}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4 font-bold text-gray-900">
-                      {language === "bn" ? "প্রোগ্রাম অফিসার" : "Program Officer"}
-                    </td>
-                    <td className="px-6 py-4">Save the Children</td>
-                    <td className="px-6 py-4 text-xs text-gray-500">
-                      {language === "bn" ? "১ জুন ২০২৬" : "01 Jun 2026"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                        {language === "bn" ? "ইন্টারভিউতে ডাকা হয়েছে" : "Interview Called"}
-                      </span>
-                    </td>
-                  </tr>
+                  {applications.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                        {language === "bn"
+                          ? "আপনি এখনো কোনো চাকরিতে আবেদন করেননি।"
+                          : "You have not applied to any jobs yet."}
+                        <div className="mt-2">
+                          <Link
+                            href="/jobs"
+                            className="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                          >
+                            {language === "bn" ? "চাকরি খুঁজুন →" : "Browse Jobs →"}
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    applications.slice(0, 5).map((app) => {
+                      const jobTitle =
+                        language === "bn"
+                          ? app.job?.titleBn || app.job?.title || "চাকরি"
+                          : app.job?.title || app.job?.titleBn || "Job";
+                      const company =
+                        app.job?.organizationName ||
+                        app.job?.company ||
+                        (language === "bn" ? "প্রতিষ্ঠান" : "Organization");
+                      const dateStr = new Date(app.appliedAt || app.createdAt || Date.now()).toLocaleDateString(
+                        language === "bn" ? "bn-BD" : "en-US",
+                        { day: "numeric", month: "short", year: "numeric" }
+                      );
+
+                      const getStatusBadge = (status: string) => {
+                        switch (status) {
+                          case "VIEWED":
+                            return (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                {language === "bn" ? "দেখা হয়েছে" : "Viewed"}
+                              </span>
+                            );
+                          case "SHORTLISTED":
+                            return (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                {language === "bn" ? "শর্টলিস্টেড" : "Shortlisted"}
+                              </span>
+                            );
+                          case "INTERVIEW":
+                            return (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                                {language === "bn" ? "ইন্টারভিউ" : "Interview"}
+                              </span>
+                            );
+                          case "REJECTED":
+                            return (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                {language === "bn" ? "বাতিল" : "Rejected"}
+                              </span>
+                            );
+                          case "HIRED":
+                            return (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                {language === "bn" ? "নিয়োগপ্রাপ্ত" : "Hired"}
+                              </span>
+                            );
+                          default:
+                            return (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {language === "bn" ? "আবেদন জমা হয়েছে" : "Applied"}
+                              </span>
+                            );
+                        }
+                      };
+
+                      return (
+                        <tr key={app.id} className="hover:bg-gray-50/50 transition">
+                          <td className="px-6 py-4 font-bold text-gray-900">
+                            <Link href={`/jobs/${app.jobId}`} className="hover:text-emerald-600 transition">
+                              {jobTitle}
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4">{company}</td>
+                          <td className="px-6 py-4 text-xs text-gray-500">{dateStr}</td>
+                          <td className="px-6 py-4">{getStatusBadge(app.status)}</td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
