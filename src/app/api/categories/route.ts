@@ -40,7 +40,12 @@ export async function GET() {
       jobCount: cat._count.jobs,
     }));
 
-    return NextResponse.json({ success: true, categories: data });
+    const districts = await prisma.district.findMany({
+      orderBy: { nameBn: "asc" },
+      select: { id: true, nameBn: true, nameEn: true, division: true },
+    });
+
+    return NextResponse.json({ success: true, categories: data, districts });
   } catch (error: any) {
     console.error("Fetch categories error:", error);
     return NextResponse.json(

@@ -68,17 +68,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { categoryId, districtId } = await req.json();
+    let { categoryId, districtId } = await req.json();
 
     if (!categoryId && !districtId) {
       return NextResponse.json({ error: "Please select a category or district for alert" }, { status: 400 });
     }
 
+    let resolvedCategoryId: string | null = null;
+    if (categoryId) {
+      const cat = await prisma.jobCategory.findFirst({
+        where: {
+          OR: [{ id: categoryId }, { slug: categoryId }],
+        },
+      });
+      if (cat) {
+        resolvedCategoryId = cat.id;
+      }
+    }
+
+    let resolvedDistrictId: number | null = null;
+    if (districtId) {
+      const dist = await prisma.district.findUnique({
+        where: { id: Number(districtId) },
+      });
+      if (dist) {
+        resolvedDistrictId = dist.id;
+      }
+    }
+
+    if (!resolvedCategoryId && !resolvedDistrictId) {
+      return NextResponse.json({ error: "Invalid category or district selected" }, { status: 400 });
+    }
+
     const alert = await prisma.jobAlert.create({
       data: {
         userId: session.userId,
-        categoryId: categoryId || null,
-        districtId: districtId ? Number(districtId) : null,
+        categoryId: resolvedCategoryId,
+        districtId: resolvedDistrictId,
       },
       include: {
         category: true,

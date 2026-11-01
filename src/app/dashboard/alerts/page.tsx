@@ -24,6 +24,7 @@ export default function JobAlertsPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [matchingJobs, setMatchingJobs] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,7 @@ export default function JobAlertsPage() {
       if (catsRes.ok) {
         const cData = await catsRes.json();
         setCategories(cData.categories || []);
+        setDistricts(cData.districts || []);
       }
     } catch (e) {
       console.error(e);
@@ -202,14 +204,20 @@ export default function JobAlertsPage() {
                   className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:border-orange-500 focus:outline-none bg-white"
                 >
                   <option value="">{language === "bn" ? "-- সারা বাংলাদেশ --" : "-- All Bangladesh --"}</option>
-                  <option value="1">ঢাকা (Dhaka)</option>
-                  <option value="2">চট্টগ্রাম (Chattogram)</option>
-                  <option value="3">রাজশাহী (Rajshahi)</option>
-                  <option value="4">খুলনা (Khulna)</option>
-                  <option value="5">সিলেট (Sylhet)</option>
-                  <option value="6">বরিশাল (Barishal)</option>
-                  <option value="7">রংপুর (Rangpur)</option>
-                  <option value="8">ময়মনসিংহ (Mymensingh)</option>
+                  {districts.length > 0 ? (
+                    districts.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {language === "bn" ? d.nameBn : d.nameEn || d.nameBn}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="1">ঢাকা (Dhaka)</option>
+                      <option value="2">গাজীপুর (Gazipur)</option>
+                      <option value="3">নারায়ণগঞ্জ (Narayanganj)</option>
+                      <option value="4">চট্টগ্রাম (Chattogram)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
