@@ -13,12 +13,16 @@ export async function GET() {
     include: {
       wallet: true,
       candidateProfile: true,
+      referrer: {
+        select: { id: true, name: true, phone: true, email: true },
+      },
       customer: {
         include: {
           agent: {
             include: {
+              user: true,
               channelPartner: {
-                include: { district: true },
+                include: { user: true, district: true },
               },
             },
           },
@@ -42,6 +46,8 @@ export async function GET() {
       phone: user.phone,
       email: user.email,
       role: user.role,
+      referralCode: user.referralCode,
+      referrer: user.referrer,
       language: user.language,
       avatarUrl: user.avatarUrl,
       wallet: user.wallet,

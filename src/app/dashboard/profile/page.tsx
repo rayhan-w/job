@@ -43,40 +43,14 @@ export default function ProfilePage() {
           setProfileData(p);
           setName(p.name || "");
           const cp = p.candidateProfile || {};
-          setFatherName(cp.fatherName || "রফিকুল ইসলাম");
-          setMotherName(cp.motherName || "রোকেয়া বেগম");
+          setFatherName(cp.fatherName || "");
+          setMotherName(cp.motherName || "");
           setGender(cp.gender || "Male");
           setDistrictId(String(cp.districtId || "1"));
-          setPresentAddress(cp.presentAddress || "মিরপুর-১০, ঢাকা");
-          setExpectedSalary(cp.expectedSalary || "৳ ৩৫,০০০ - ৫০,০০০");
+          setPresentAddress(cp.presentAddress || "");
+          setExpectedSalary(cp.expectedSalary || "");
           setCareerObjective(cp.careerObjective || "");
-          setEducations(
-            p.educations && p.educations.length > 0
-              ? p.educations
-              : [
-                  {
-                    exam: "এসএসসি",
-                    boardOrInstitution: "ঢাকা শিক্ষা বোর্ড",
-                    subjectOrGroup: "বিজ্ঞান",
-                    result: "5.00",
-                    passingYear: 2018,
-                  },
-                  {
-                    exam: "এইচএসসি",
-                    boardOrInstitution: "ঢাকা শিক্ষা বোর্ড",
-                    subjectOrGroup: "বিজ্ঞান",
-                    result: "4.50",
-                    passingYear: 2020,
-                  },
-                  {
-                    exam: "বিএসসি",
-                    boardOrInstitution: "ঢাকা বিশ্ববিদ্যালয়",
-                    subjectOrGroup: "কম্পিউটার সায়েন্স",
-                    result: "3.75",
-                    passingYear: 2024,
-                  },
-                ]
-          );
+          setEducations(p.educations || []);
         }
       })
       .finally(() => setLoading(false));
@@ -131,7 +105,33 @@ export default function ProfilePage() {
     setEducations(updated);
   };
 
-  const completeness = profileData?.candidateProfile?.completeness ?? 78;
+  const hasPhoto = Boolean(profileData?.avatarUrl);
+  const hasPersonalInfo = Boolean(fatherName && motherName);
+  const hasAddress = Boolean(presentAddress);
+  const hasEducation = Boolean(educations && educations.length > 0);
+  const hasCareer = Boolean(careerObjective || expectedSalary);
+
+  let calculatedCompleteness = 0;
+  if (hasPhoto) calculatedCompleteness += 20;
+  if (hasPersonalInfo) calculatedCompleteness += 20;
+  if (hasAddress) calculatedCompleteness += 20;
+  if (hasEducation) calculatedCompleteness += 20;
+  if (hasCareer) calculatedCompleteness += 20;
+
+  const completeness = profileData ? calculatedCompleteness : 0;
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
+        <DashboardSidebar userRole="CUSTOMER" />
+        <div className="flex-1 space-y-6">
+          <div className="h-8 w-48 bg-gray-200 animate-pulse rounded-xl" />
+          <div className="h-44 bg-gray-100 animate-pulse rounded-3xl" />
+          <div className="h-96 bg-gray-100 animate-pulse rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -161,27 +161,27 @@ export default function ProfilePage() {
                 {profileData?.avatarUrl ? (
                   <img src={profileData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <span>{name[0] || "র"}</span>
+                  <span>{name ? name[0] : "👤"}</span>
                 )}
               </div>
 
               <div className="text-center sm:text-left space-y-1.5 flex-1">
-                <h2 className="text-xl font-black text-gray-900">{name || (language === "bn" ? "রাহাতুল ইসলাম" : "Rahatul Islam")}</h2>
+                <h2 className="text-xl font-black text-gray-900">{name || (language === "bn" ? "নাম প্রদান করুন" : "Set Your Name")}</h2>
                 <div className="text-xs font-semibold text-orange-600">
                   {language === "bn" ? "ক্যান্ডিডেট" : "Candidate"}
                 </div>
                 <div className="pt-2 space-y-1 text-xs text-gray-500">
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{profileData?.phone || "+880 1712345678"}</span>
+                    <span>{profileData?.phone || "-"}</span>
                   </div>
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <Mail className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{profileData?.email || "rahat@gmail.com"}</span>
+                    <span>{profileData?.email || (language === "bn" ? "ইমেইল যুক্ত করা হয়নি" : "No email added")}</span>
                   </div>
                   <div className="flex items-center justify-center sm:justify-start gap-2">
                     <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{presentAddress || (language === "bn" ? "ঢাকা, বাংলাদেশ" : "Dhaka, Bangladesh")}</span>
+                    <span>{presentAddress || (language === "bn" ? "ঠিকানা যুক্ত করা হয়নি" : "Address not added")}</span>
                   </div>
                 </div>
               </div>
@@ -202,23 +202,23 @@ export default function ProfilePage() {
                 <div className="space-y-2 text-xs text-gray-600">
                   <div className="flex items-center justify-between">
                     <span>{language === "bn" ? "ছবি আপলোড" : "Photo Upload"}</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    {hasPhoto ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <span className="w-2 h-2 rounded-full bg-gray-300" />}
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{language === "bn" ? "ব্যক্তিগত তথ্য" : "Personal Info"}</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    {hasPersonalInfo ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <span className="w-2 h-2 rounded-full bg-gray-300" />}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>{language === "bn" ? "ঠিকানা ও জেলা" : "Address & District"}</span>
+                    {hasAddress ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <span className="w-2 h-2 rounded-full bg-gray-300" />}
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{language === "bn" ? "শিক্ষাগত যোগ্যতা (১+)" : "Education (1+)"}</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    {hasEducation ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <span className="w-2 h-2 rounded-full bg-gray-300" />}
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>{language === "bn" ? "অভিজ্ঞতা (১+)" : "Experience (1+)"}</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === "bn" ? "সিভি আপলোড" : "CV Upload"}</span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <span>{language === "bn" ? "ক্যারিয়ার লক্ষ্য / অভিজ্ঞতা" : "Career Info"}</span>
+                    {hasCareer ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <span className="w-2 h-2 rounded-full bg-gray-300" />}
                   </div>
                 </div>
               </div>

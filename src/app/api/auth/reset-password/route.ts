@@ -72,10 +72,13 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: "Password reset successful! You can now log in with your new password.",
     });
+
+    response.cookies.delete("jp_session");
+    return response;
   } catch (error) {
     console.error("Reset password API error:", error);
     return NextResponse.json(

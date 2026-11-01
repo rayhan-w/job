@@ -56,7 +56,7 @@ export default function HomePage() {
   const [applyMessage, setApplyMessage] = useState<{ id: string; text: string; error?: boolean } | null>(null);
 
   useEffect(() => {
-    fetch("/api/jobs")
+    fetch("/api/jobs?sort=popular")
       .then((res) => res.json())
       .then((data) => {
         if (data.jobs) setJobs(data.jobs);
@@ -508,34 +508,41 @@ export default function HomePage() {
             <div className="space-y-4">
               {/* Interview & Calendar Widget */}
               <div className="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-200/70 flex flex-col sm:flex-row items-center justify-center gap-3.5">
-                {/* Calendar Widget */}
+                {/* Dynamic Calendar Widget */}
                 <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs text-xs w-full sm:w-48">
                   <div className="font-bold text-gray-800 flex items-center justify-between mb-1.5 text-[11px]">
-                    <span>September</span>
+                    <span>{new Date().toLocaleString(language === "bn" ? "bn-BD" : "en-US", { month: "long", year: "numeric" })}</span>
                     <CalendarDays className="w-3 h-3 text-gray-400" />
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-[9px] text-gray-400 text-center font-medium">
                     <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-[9px] text-center font-semibold text-gray-700 mt-1">
-                    <span className="p-0.5">1</span><span className="p-0.5">2</span><span className="p-0.5">3</span>
-                    <span className="p-0.5 bg-orange-600 text-white rounded">4</span><span className="p-0.5">5</span><span className="p-0.5">6</span><span className="p-0.5">7</span>
+                    <span className="p-0.5">1</span><span className="p-0.5 bg-orange-600 text-white rounded">2</span><span className="p-0.5">3</span>
+                    <span className="p-0.5">4</span><span className="p-0.5">5</span><span className="p-0.5">6</span><span className="p-0.5">7</span>
+                    <span className="p-0.5">8</span><span className="p-0.5">9</span><span className="p-0.5">10</span><span className="p-0.5">11</span><span className="p-0.5">12</span><span className="p-0.5">13</span><span className="p-0.5">14</span>
                   </div>
                 </div>
 
-                {/* Upcoming Interview Card */}
+                {/* Upcoming Circular / Exam Schedule Card */}
                 <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm text-xs w-full sm:w-48 space-y-2">
-                  <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-                    Upcoming Interview
+                  <div className="text-[9px] font-bold text-orange-600 uppercase tracking-wider flex items-center gap-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    <span>{language === "bn" ? "পরীক্ষা ও ইন্টারভিউ" : "Interview & Exam"}</span>
                   </div>
-                  <div className="font-bold text-gray-900 text-[11px] truncate">
-                    {language === "bn" ? "কৃষি প্রকল্প কর্মকর্তা" : "Agro Project Officer"}
+                  <div className="font-bold text-gray-950 text-[11px] truncate">
+                    {language === "bn" ? "অনলাইন পরীক্ষা ও ভাইভা" : "Live Assessment & Viva"}
                   </div>
-                  <div className="text-[10px] text-gray-500">Wednesday • 10:30 AM</div>
-                  <button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-1 rounded-lg text-[10px] transition flex items-center justify-center gap-1">
-                    <Video className="w-3.5 h-3.5" />
-                    <span>Join Now</span>
-                  </button>
+                  <div className="text-[10px] text-gray-500">
+                    {language === "bn" ? "শর্টলিস্ট নোটিফিকেশন" : "Direct Shortlist Notice"}
+                  </div>
+                  <Link
+                    href="/dashboard/applications"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-1 rounded-lg text-[10px] transition flex items-center justify-center gap-1"
+                  >
+                    <Video className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{language === "bn" ? "নোটিশ দেখুন" : "View Notice"}</span>
+                  </Link>
                 </div>
               </div>
 

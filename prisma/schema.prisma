@@ -20,11 +20,16 @@ model User {
   language      String      @default("bn")       // bn or en
   status        String      @default("ACTIVE")   // ACTIVE, INACTIVE, BLOCKED
   avatarUrl     String?     @map("avatar_url")
+  referralCode  String?     @unique @map("referral_code")
+  referredById  String?     @map("referred_by_id")
   termsAccepted Boolean     @default(false)      @map("terms_accepted")
   termsAcceptedAt DateTime? @map("terms_accepted_at")
   termsPolicyVersion String? @default("v1.0")    @map("terms_policy_version")
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  referrer          User?       @relation("UserReferrals", fields: [referredById], references: [id])
+  referees          User[]      @relation("UserReferrals")
 
   // Relationships
   staffProfile      StaffProfile?
@@ -500,6 +505,7 @@ model CashInRequest {
   senderNumber    String    @map("sender_number")
   transactionId   String    @unique @map("transaction_id")
   screenshotUrl   String?   @map("screenshot_url")
+  note            String?
   status          String    @default("PENDING") // PENDING, APPROVED, REJECTED
   rejectionReason String?   @map("rejection_reason")
   approvedBy      String?   @map("approved_by")
@@ -535,6 +541,7 @@ model QuizBook {
   nameBn        String   @map("name_bn")
   nameEn        String   @map("name_en")
   subject       String
+  status        String   @default("PUBLISHED") // DRAFT, PUBLISHED
   institutionId String?  @map("institution_id")
   createdAt     DateTime @default(now()) @map("created_at")
 

@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const districtId = searchParams.get("districtId") || searchParams.get("district") ? Number(searchParams.get("districtId") || searchParams.get("district")) : undefined;
     const jobType = searchParams.get("jobType") as JobType | undefined;
     const status = (searchParams.get("status") as JobStatus) || "PUBLISHED";
+    const sort = searchParams.get("sort");
 
     const whereClause: any = {
       status,
@@ -44,6 +45,14 @@ export async function GET(req: NextRequest) {
       whereClause.jobType = jobType;
     }
 
+    let orderBy: any = { createdAt: "desc" };
+    if (sort === "popular") {
+      orderBy = [
+        { applications: { _count: "desc" } },
+        { publishedAt: "desc" },
+      ];
+    }
+
     const jobs = await prisma.job.findMany({
       where: whereClause,
       include: {
@@ -54,7 +63,7 @@ export async function GET(req: NextRequest) {
           select: { applications: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
     });
 
     return NextResponse.json({ success: true, jobs });
@@ -84,6 +93,9 @@ export async function POST(req: NextRequest) {
       salaryRange,
       educationReq,
       experienceReq,
+      ageLimit,
+      responsibilities,
+      otherReqs,
       descriptionBn,
       descriptionEn,
       deadline,
@@ -123,6 +135,9 @@ export async function POST(req: NextRequest) {
         salaryRange: salaryRange || "Negotiable",
         educationReq,
         experienceReq,
+        ageLimit: ageLimit || null,
+        responsibilities: responsibilities || null,
+        otherReqs: otherReqs || null,
         descriptionBn,
         descriptionEn: descriptionEn || descriptionBn,
         deadline: new Date(deadline),

@@ -9,13 +9,27 @@ export async function GET(req: NextRequest) {
       include: {
         book: {
           select: {
+            id: true,
             nameBn: true,
             nameEn: true,
             subject: true,
+            _count: {
+              select: {
+                questions: { where: { status: "APPROVED" } },
+              },
+            },
           },
         },
       },
       orderBy: { createdAt: "desc" },
+    });
+
+    const formattedPackages = packages.map((pkg) => {
+      const realQCount = pkg.book?._count?.questions ?? pkg.questionCount;
+      return {
+        ...pkg,
+        questionCount: realQCount > 0 ? realQCount : pkg.questionCount,
+      };
     });
 
     let isLoggedIn = false;
@@ -45,7 +59,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      packages,
+      packages: formattedPackages,
       isLoggedIn,
       walletBalance,
       userAttempts,

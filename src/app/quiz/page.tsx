@@ -245,45 +245,20 @@ export default function QuizPage() {
     }
   };
 
-  // Default sample packages if none created in DB yet
-  const displayPackages =
-    packages.length > 0
-      ? packages
-      : [
-          {
-            id: "pkg-bangladesh",
-            nameBn: "বাংলাদেশ বিষয়াবলী ও সাম্প্রতিক সাধারণ জ্ঞান",
-            nameEn: "Bangladesh Affairs & Recent GK",
-            questionCount: 10,
-            timeLimitMinutes: 10,
-            price: 50,
-            targetScore: 8,
-            bonusAmount: 100,
-            book: { titleBn: "বিসিএস ও সরকারি চাকরি সাধারণ জ্ঞান" },
-          },
-          {
-            id: "pkg-english",
-            nameBn: "সাধারণ ইংরেজি ও ব্যাকরণ স্পেশাল কুইজ",
-            nameEn: "General English & Grammar Contest",
-            questionCount: 10,
-            timeLimitMinutes: 10,
-            price: 50,
-            targetScore: 8,
-            bonusAmount: 100,
-            book: { titleBn: "জব ইংলিশ প্র্যাকটিস" },
-          },
-          {
-            id: "pkg-math",
-            nameBn: "গাণিতিক যুক্তি ও মানসিক দক্ষতা",
-            nameEn: "Mathematical Reasoning & Mental Ability",
-            questionCount: 10,
-            timeLimitMinutes: 12,
-            price: 60,
-            targetScore: 8,
-            bonusAmount: 120,
-            book: { titleBn: "জব ম্যাথ সল্যুশন" },
-          },
-        ];
+  const displayPackages = packages;
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+        <div className="h-8 w-64 bg-gray-200 animate-pulse rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-72 bg-gray-100 animate-pulse rounded-3xl" />
+          <div className="h-72 bg-gray-100 animate-pulse rounded-3xl" />
+          <div className="h-72 bg-gray-100 animate-pulse rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -483,8 +458,21 @@ export default function QuizPage() {
 
       {/* PACKAGES TAB */}
       {activeTab === "packages" && !currentAttemptId && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayPackages.map((pkg) => {
+        displayPackages.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
+            <HelpCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-gray-800">
+              {language === "bn" ? "বর্তমানে কোনো সক্রিয় কুইজ প্যাকেজ নেই" : "No active quiz packages available"}
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              {language === "bn"
+                ? "নতুন কুইজ প্যাকেজ প্রকাশিত হলে এখানে দেখতে পাবেন।"
+                : "New quiz packages will appear here once published."}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayPackages.map((pkg) => {
             const attempts = userAttempts[pkg.id] || [];
             const activeAttempt = attempts.find((a) => a.status === "IN_PROGRESS");
             const isBuying = buyingId === pkg.id;
@@ -570,6 +558,7 @@ export default function QuizPage() {
             );
           })}
         </div>
+        )
       )}
 
       {/* LEADERBOARD TAB */}

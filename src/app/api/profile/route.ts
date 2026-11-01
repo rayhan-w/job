@@ -143,13 +143,14 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // Calculate completeness
-    let completeness = 20; // phone + user account
-    if (fatherName && motherName && gender) completeness += 20;
-    if (districtId && presentAddress) completeness += 10;
-    if (educations.length > 0) completeness += 25;
-    if (experiences.length > 0) completeness += 15;
-    if (skills.length > 0) completeness += 10;
+    // Calculate completeness honestly from 0% based on filled fields
+    const dbUser = await prisma.user.findUnique({ where: { id: session.userId } });
+    let completeness = 0;
+    if (dbUser?.avatarUrl) completeness += 20;
+    if (fatherName && motherName) completeness += 20;
+    if (presentAddress && districtId) completeness += 20;
+    if (Array.isArray(educations) && educations.length > 0) completeness += 20;
+    if (careerObjective || expectedSalary || (Array.isArray(experiences) && experiences.length > 0)) completeness += 20;
     completeness = Math.min(100, completeness);
 
     await prisma.candidateProfile.update({

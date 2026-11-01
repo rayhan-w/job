@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken } from "@/lib/auth";
 import { ensureWallet } from "@/lib/wallet";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,12 +48,34 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    // Resolve Agent: if referral code provided, lookup agent; else use Default Agent
+    // Resolve Referral / Agent
     let targetAgent = null;
+    let referringUserId: string | null = null;
+
     if (refCode) {
+      const cleanRef = String(refCode).trim().toUpperCase();
+      // 1. Check if refCode belongs to an Agent
       targetAgent = await prisma.agent.findUnique({
-        where: { referralCode: refCode },
+        where: { referralCode: cleanRef },
       });
+
+      // 2. Check if refCode belongs to a User
+      const referringUser = await prisma.user.findUnique({
+        where: { referralCode: cleanRef },
+      });
+
+      if (referringUser) {
+        referringUserId = referringUser.id;
+        // If the referring user is under an agent, link same agent
+        const refCustomer = await prisma.customer.findUnique({
+          where: { userId: referringUser.id },
+        });
+        if (refCustomer && !targetAgent) {
+          targetAgent = await prisma.agent.findUnique({
+            where: { id: refCustomer.agentId },
+          });
+        }
+      }
     }
 
     if (!targetAgent) {
@@ -61,9 +85,22 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Fallback if no agent found in edge cases
     if (!targetAgent) {
       targetAgent = await prisma.agent.findFirst();
+    }
+
+    // Generate unique referral code for the new user
+    let userReferralCode = "WOJ-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+    let isUnique = false;
+    while (!isUnique) {
+      const existingCode = await prisma.user.findUnique({
+        where: { referralCode: userReferralCode },
+      });
+      if (!existingCode) {
+        isUnique = true;
+      } else {
+        userReferralCode = "WOJ-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+      }
     }
 
     const user = await prisma.user.create({
@@ -73,6 +110,8 @@ export async function POST(req: NextRequest) {
         email: email ? email.toLowerCase().trim() : undefined,
         passwordHash,
         role: role,
+        referralCode: userReferralCode,
+        referredById: referringUserId,
         termsAccepted: true,
         termsAcceptedAt: new Date(),
         termsPolicyVersion: "v1.0",
@@ -90,15 +129,24 @@ export async function POST(req: NextRequest) {
     // Initialize wallet
     await ensureWallet(user.id);
 
-    // If candidate, create initial profile
+    // If candidate, create initial blank profile (completeness 0%)
     if (role === "CUSTOMER") {
       await prisma.candidateProfile.create({
         data: {
           userId: user.id,
           phone: user.phone,
-          completeness: 20,
+          completeness: 0,
         },
       });
+    }
+
+    // Trigger welcome email if email provided
+    if (user.email) {
+      try {
+        await sendWelcomeEmail(user.email, user.name);
+      } catch (mailErr) {
+        console.error("Welcome email error:", mailErr);
+      }
     }
 
     const token = signToken({

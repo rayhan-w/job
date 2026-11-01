@@ -31,11 +31,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "nameBn and subject are required" }, { status: 400 });
     }
 
+    const existing = await prisma.quizBook.findFirst({
+      where: {
+        OR: [
+          { nameBn: { equals: nameBn.trim(), mode: "insensitive" as const } },
+          ...(nameEn ? [{ nameEn: { equals: nameEn.trim(), mode: "insensitive" as const } }] : []),
+        ],
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "A quiz book with this exact name already exists. Duplicate book names are not allowed." },
+        { status: 400 }
+      );
+    }
+
     const book = await prisma.quizBook.create({
       data: {
-        nameBn,
-        nameEn: nameEn || nameBn,
-        subject,
+        nameBn: nameBn.trim(),
+        nameEn: nameEn ? nameEn.trim() : nameBn.trim(),
+        subject: subject.trim(),
+        status: "PUBLISHED",
       },
     });
 

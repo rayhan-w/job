@@ -68,6 +68,8 @@ export default function AdminPage() {
     educationReq: "স্নাতক / সমমান",
     experienceReq: "১-২ বছর",
     ageLimit: "১৮-৩০ বছর",
+    responsibilities: "",
+    otherReqs: "",
     deadline: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
     descriptionBn: "",
     status: "PUBLISHED",
@@ -129,6 +131,10 @@ export default function AdminPage() {
     supportEmail: "support@wojob.com",
     officeAddress: "গুলশান-১, ঢাকা, বাংলাদেশ",
     noticeMessage: "",
+    bkashNumber: "01700-000000",
+    nagadNumber: "01700-000000",
+    rocketNumber: "01700-000000",
+    bankInfo: "City Bank A/C: 1234567890",
   });
 
   const fetchAllAdminData = async () => {
@@ -554,7 +560,7 @@ export default function AdminPage() {
               activeTab === "finance" ? "bg-amber-500 text-slate-950 shadow-sm" : "text-slate-300 hover:text-white"
             }`}
           >
-            {language === "bn" ? "ক্যাশ-ইন / আউট" : "Finance"}
+            {language === "bn" ? "ওয়ালেট অনুমোদন" : "Wallet Approvals"}
           </button>
           <button
             onClick={() => setActiveTab("quizzes")}
@@ -631,9 +637,23 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-              {language === "bn" ? "১০০% ব্যালেন্স মিল রয়েছে" : "100% Balanced"}
-            </span>
+            {reportData?.reconciliation?.passed ? (
+              <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{language === "bn" ? "১০০% ব্যালেন্স মিল রয়েছে" : "100% Balanced"}</span>
+              </span>
+            ) : (
+              <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-red-100 text-red-800 border border-red-200 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                <span>
+                  {language === "bn"
+                    ? `অসামঞ্জস্য: ৳${Math.abs(reportData?.reconciliation?.difference || 0)} ${
+                        (reportData?.reconciliation?.difference || 0) > 0 ? "অতিরিক্ত" : "ঘাটতি"
+                      }`
+                    : `Discrepancy: ৳${Math.abs(reportData?.reconciliation?.difference || 0)}`}
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Quick Metrics */}
@@ -755,6 +775,8 @@ export default function AdminPage() {
                   educationReq: "স্নাতক / সমমান",
                   experienceReq: "১-২ বছর",
                   ageLimit: "১৮-৩০ বছর",
+                  responsibilities: "",
+                  otherReqs: "",
                   deadline: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
                   descriptionBn: "",
                   status: "PUBLISHED",
@@ -923,12 +945,34 @@ export default function AdminPage() {
                 </div>
 
                 <div className="sm:col-span-3">
-                  <label className="block text-xs font-bold text-gray-700 mb-1">চাকরির বিবরণ ও শর্তাবলী</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">চাকরির বিবরণ ও সারসংক্ষেপ</label>
                   <textarea
                     rows={3}
                     value={jobForm.descriptionBn}
                     onChange={(e) => setJobForm({ ...jobForm, descriptionBn: e.target.value })}
-                    placeholder="চাকরির বিস্তারিত দায়িত্ব ও প্রয়োজনীয় শর্তাবলী..."
+                    placeholder="চাকরির সংক্ষিপ্ত বিবরণ..."
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">কাজের দায়িত্বসমূহ (Responsibilities)</label>
+                  <textarea
+                    rows={2}
+                    value={jobForm.responsibilities}
+                    onChange={(e) => setJobForm({ ...jobForm, responsibilities: e.target.value })}
+                    placeholder="দায়িত্ব ও কাজের পরিধি..."
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">অন্যান্য শর্তাবলী (Other Requirements)</label>
+                  <textarea
+                    rows={2}
+                    value={jobForm.otherReqs}
+                    onChange={(e) => setJobForm({ ...jobForm, otherReqs: e.target.value })}
+                    placeholder="অতিরিক্ত যোগ্যতা বা অন্যান্য প্রয়োজনীয় শর্তাবলী..."
                     className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
                   />
                 </div>
@@ -1054,6 +1098,8 @@ export default function AdminPage() {
                                 educationReq: job.educationReq || "",
                                 experienceReq: job.experienceReq || "",
                                 ageLimit: job.ageLimit || "",
+                                responsibilities: job.responsibilities || "",
+                                otherReqs: job.otherReqs || "",
                                 deadline: new Date(job.deadline).toISOString().split("T")[0],
                                 descriptionBn: job.descriptionBn || "",
                                 status: job.status,
@@ -1972,6 +2018,44 @@ export default function AdminPage() {
                 onChange={(e) => setSiteSettings({ ...siteSettings, officeAddress: e.target.value })}
                 className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-bold"
               />
+            </div>
+
+            <div className="sm:col-span-2 pt-4 border-t border-gray-100">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+                অফিসিয়াল পেমেন্ট অ্যাকাউন্ট নম্বরসমূহ (Official Payment Numbers)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">bKash নম্বর</label>
+                  <input
+                    type="text"
+                    value={siteSettings.bkashNumber || ""}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, bkashNumber: e.target.value })}
+                    placeholder="017xxxxxxxx"
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nagad নম্বর</label>
+                  <input
+                    type="text"
+                    value={siteSettings.nagadNumber || ""}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, nagadNumber: e.target.value })}
+                    placeholder="017xxxxxxxx"
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Rocket নম্বর</label>
+                  <input
+                    type="text"
+                    value={siteSettings.rocketNumber || ""}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, rocketNumber: e.target.value })}
+                    placeholder="017xxxxxxxx"
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="sm:col-span-2">

@@ -27,10 +27,14 @@ export default function ReferralPage() {
       });
   }, []);
 
-  const refCode = userData?.agent?.referralCode || "REF12345";
-  const refLink = typeof window !== "undefined" ? `${window.location.origin}/register?ref=${refCode}` : `http://localhost:3000/register?ref=${refCode}`;
+  const refCode = userData?.referralCode || userData?.agent?.referralCode || "";
+  const refLink =
+    typeof window !== "undefined" && refCode
+      ? `${window.location.origin}/register?ref=${refCode}`
+      : "";
 
   const copyToClipboard = (text: string, isLink: boolean) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     if (isLink) {
       setCopiedLink(true);
@@ -40,6 +44,24 @@ export default function ReferralPage() {
       setTimeout(() => setCopiedCode(false), 2000);
     }
   };
+
+  const agentName =
+    userData?.customer?.agent?.user?.name ||
+    userData?.referrer?.name ||
+    (language === "bn" ? "সরাসরি নিবন্ধিত (সিস্টেম)" : "Direct Registration (System)");
+
+  const agentPhone =
+    userData?.customer?.agent?.user?.phone ||
+    userData?.referrer?.phone ||
+    (language === "bn" ? "কোনো রেফারেল মাধ্যম নেই" : "No referrer assigned");
+
+  const cpName =
+    userData?.customer?.agent?.channelPartner?.user?.name ||
+    (language === "bn" ? "সেন্ট্রাল অ্যাডমিন জোন" : "Central Admin Zone");
+
+  const cpDistrict =
+    userData?.customer?.agent?.channelPartner?.district?.nameBn ||
+    (language === "bn" ? "সারাদেশ (All Bangladesh)" : "All Bangladesh");
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -117,12 +139,12 @@ export default function ReferralPage() {
               </div>
               <div>
                 <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
-                  {language === "bn" ? "আমার এজেন্ট" : "My Agent"}
+                  {language === "bn" ? "আমার রেফারার / এজেন্ট" : "My Referrer / Agent"}
                 </div>
                 <div className="font-bold text-gray-900 text-base mt-0.5">
-                  {language === "bn" ? "মো: হাসানুর রহমান" : "Md. Hasanur Rahman"}
+                  {agentName}
                 </div>
-                <div className="text-xs text-gray-500">+880 1700000021</div>
+                <div className="text-xs text-gray-500">{agentPhone}</div>
               </div>
             </div>
 
@@ -132,13 +154,13 @@ export default function ReferralPage() {
               </div>
               <div>
                 <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
-                  {language === "bn" ? "আমার চ্যানেল পার্টনার" : "My Channel Partner"}
+                  {language === "bn" ? "আমার চ্যানেল পার্টনার" : "Channel Partner"}
                 </div>
                 <div className="font-bold text-gray-900 text-base mt-0.5">
-                  {language === "bn" ? "ঢাকা চ্যানেল পার্টনার" : "Dhaka Channel Partner"}
+                  {cpName}
                 </div>
                 <div className="text-xs text-emerald-600 font-medium">
-                  {language === "bn" ? "ঢাকা জেলা (District Unique)" : "Dhaka District (Unique)"}
+                  {cpDistrict}
                 </div>
               </div>
             </div>

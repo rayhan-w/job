@@ -41,11 +41,6 @@ export default function LoginPage() {
     }
   };
 
-  const quickFill = (p: string, pwd: string) => {
-    setPhone(p);
-    setPassword(pwd);
-  };
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl w-full max-w-md space-y-6">
@@ -120,43 +115,6 @@ export default function LoginPage() {
             <span>{loading ? (language === "bn" ? "লগইন হচ্ছে..." : "Signing in...") : (language === "bn" ? "লগইন করুন" : "Sign In")}</span>
           </button>
         </form>
-
-        {/* Quick Test Accounts Filler */}
-        <div className="pt-4 border-t border-gray-100">
-          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 text-center">
-            {language === "bn" ? "টেস্ট অ্যাকাউন্ট (১-ক্লিক সিলেক্ট):" : "Test Accounts (1-Click Select):"}
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => quickFill("01712345678", "User@123456")}
-              className="p-2 bg-emerald-50 text-emerald-800 rounded-lg font-semibold hover:bg-emerald-100 transition text-left"
-            >
-              👤 {language === "bn" ? "ক্যান্ডিডেট (রাহাতুল)" : "Candidate (Rahatul)"}
-            </button>
-            <button
-              type="button"
-              onClick={() => quickFill("01700000001", "Admin@123456")}
-              className="p-2 bg-purple-50 text-purple-800 rounded-lg font-semibold hover:bg-purple-100 transition text-left"
-            >
-              🛡️ {language === "bn" ? "সুপার অ্যাডমিন" : "Super Admin"}
-            </button>
-            <button
-              type="button"
-              onClick={() => quickFill("01700000002", "Staff@123456")}
-              className="p-2 bg-blue-50 text-blue-800 rounded-lg font-semibold hover:bg-blue-100 transition text-left"
-            >
-              👮 {language === "bn" ? "জব মডারেটর স্টাফ" : "Job Moderator Staff"}
-            </button>
-            <button
-              type="button"
-              onClick={() => quickFill("01700000021", "Agent@123456")}
-              className="p-2 bg-amber-50 text-amber-800 rounded-lg font-semibold hover:bg-amber-100 transition text-left"
-            >
-              💼 {language === "bn" ? "এজেন্ট (ঢাকা)" : "Agent (Dhaka)"}
-            </button>
-          </div>
-        </div>
 
         <div className="text-center text-xs text-gray-600 bg-orange-50/80 p-3.5 rounded-2xl border border-orange-200/80">
           <span>{language === "bn" ? "নতুন অ্যাকাউন্ট প্রয়োজন? " : "Don't have an account? "}</span>

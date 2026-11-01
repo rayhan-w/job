@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { amount, method, senderNumber, transactionId, screenshotUrl } = await req.json();
+    const { amount, method, senderNumber, transactionId, note, screenshotUrl } = await req.json();
 
     if (!amount || Number(amount) <= 0 || !method || !senderNumber || !transactionId) {
       return NextResponse.json(
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     // Check transaction ID uniqueness
     const existing = await prisma.cashInRequest.findUnique({
-      where: { transactionId },
+      where: { transactionId: transactionId.trim() },
     });
 
     if (existing) {
@@ -35,8 +35,9 @@ export async function POST(req: NextRequest) {
         userId: session.userId,
         amount: Number(amount),
         method,
-        senderNumber,
-        transactionId,
+        senderNumber: senderNumber.trim(),
+        transactionId: transactionId.trim(),
+        note: note ? String(note).trim() : null,
         screenshotUrl,
         status: "PENDING",
       },

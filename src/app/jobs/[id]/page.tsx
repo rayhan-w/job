@@ -16,6 +16,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Share2,
+  Bookmark,
   FileText,
   DollarSign,
   UserCheck,
@@ -37,6 +38,8 @@ export default function JobDetailPage() {
   const [applying, setApplying] = useState(false);
   const [applyMsg, setApplyMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savingBookmark, setSavingBookmark] = useState(false);
 
   useEffect(() => {
     if (!jobId) return;
@@ -52,12 +55,49 @@ export default function JobDetailPage() {
         setIsLoggedIn(Boolean(data.isLoggedIn));
         setUserRole(data.userRole);
         setProfileComplete(Boolean(data.profileComplete));
+
+        if (data.isLoggedIn) {
+          fetch("/api/saved-jobs")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((sData) => {
+              if (sData?.savedJobs) {
+                const found = sData.savedJobs.some((s: any) => s.jobId === jobId);
+                setIsSaved(found);
+              }
+            })
+            .catch(() => {});
+        }
       })
       .catch((err) => {
         console.error("Fetch job detail failed:", err);
       })
       .finally(() => setLoading(false));
   }, [jobId]);
+
+  const handleToggleSave = async () => {
+    if (!isLoggedIn) {
+      router.push(`/login?callbackUrl=/jobs/${jobId}`);
+      return;
+    }
+    setSavingBookmark(true);
+    try {
+      if (isSaved) {
+        await fetch(`/api/saved-jobs?jobId=${jobId}`, { method: "DELETE" });
+        setIsSaved(false);
+      } else {
+        await fetch("/api/saved-jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId }),
+        });
+        setIsSaved(true);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingBookmark(false);
+    }
+  };
 
   const handleApply = async () => {
     if (!isLoggedIn) {
@@ -217,14 +257,33 @@ export default function JobDetailPage() {
             </div>
           </div>
 
-          {/* Share button */}
-          <button
-            onClick={handleShare}
-            className="self-start inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-bold text-gray-600 transition"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>{copied ? (language === "bn" ? "কপি হয়েছে!" : "Copied!") : (language === "bn" ? "শেয়ার" : "Share")}</span>
-          </button>
+          {/* Save & Share action buttons */}
+          <div className="flex items-center gap-2 self-start">
+            <button
+              onClick={handleToggleSave}
+              disabled={savingBookmark}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition ${
+                isSaved
+                  ? "bg-orange-50 border-orange-300 text-orange-700 shadow-xs"
+                  : "border-gray-200 hover:bg-gray-50 text-gray-600"
+              }`}
+            >
+              <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-orange-600 text-orange-600" : ""}`} />
+              <span>
+                {isSaved
+                  ? language === "bn" ? "সংরক্ষিত ✓" : "Saved ✓"
+                  : language === "bn" ? "বুকমার্ক" : "Save Job"}
+              </span>
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-bold text-gray-600 transition"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{copied ? (language === "bn" ? "কপি হয়েছে!" : "Copied!") : (language === "bn" ? "শেয়ার" : "Share")}</span>
+            </button>
+          </div>
         </div>
 
         {/* Quick Highlights Grid */}

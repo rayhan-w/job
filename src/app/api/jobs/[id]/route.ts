@@ -112,6 +112,8 @@ export async function PATCH(
     if (body.educationReq !== undefined) updateData.educationReq = body.educationReq;
     if (body.experienceReq !== undefined) updateData.experienceReq = body.experienceReq;
     if (body.ageLimit !== undefined) updateData.ageLimit = body.ageLimit;
+    if (body.responsibilities !== undefined) updateData.responsibilities = body.responsibilities;
+    if (body.otherReqs !== undefined) updateData.otherReqs = body.otherReqs;
     if (body.descriptionBn !== undefined) updateData.descriptionBn = body.descriptionBn;
     if (body.descriptionEn !== undefined) updateData.descriptionEn = body.descriptionEn;
     if (body.status !== undefined) updateData.status = body.status;

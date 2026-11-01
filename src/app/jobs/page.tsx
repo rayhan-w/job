@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/LanguageContext";
 import {
   Search,
@@ -13,14 +13,18 @@ import {
   Building2,
   DollarSign,
   Filter,
+  Bookmark,
 } from "lucide-react";
 
 function JobsContent() {
+  const router = useRouter();
   const { language, t } = useLanguage();
   const searchParams = useSearchParams();
 
   const [jobs, setJobs] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [category, setCategory] = useState(searchParams.get("category") || searchParams.get("categoryId") || "");
@@ -33,6 +37,23 @@ function JobsContent() {
       .then((res) => res.json())
       .then((data) => {
         if (data.categories) setCategories(data.categories);
+      })
+      .catch(() => {});
+
+    // Check user auth & saved jobs
+    fetch("/api/saved-jobs")
+      .then((res) => {
+        if (res.ok) {
+          setIsLoggedIn(true);
+          return res.json();
+        }
+        return null;
+      })
+      .then((data) => {
+        if (data?.savedJobs) {
+          const ids = new Set<string>(data.savedJobs.map((s: any) => s.jobId));
+          setSavedJobIds(ids);
+        }
       })
       .catch(() => {});
   }, []);
@@ -68,6 +89,39 @@ function JobsContent() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchJobs();
+  };
+
+  const handleToggleSave = async (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      router.push(`/login?callbackUrl=/jobs`);
+      return;
+    }
+
+    const isCurrentlySaved = savedJobIds.has(jobId);
+    const updated = new Set(savedJobIds);
+    if (isCurrentlySaved) {
+      updated.delete(jobId);
+    } else {
+      updated.add(jobId);
+    }
+    setSavedJobIds(updated);
+
+    try {
+      if (isCurrentlySaved) {
+        await fetch(`/api/saved-jobs?jobId=${jobId}`, { method: "DELETE" });
+      } else {
+        await fetch("/api/saved-jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId }),
+        });
+      }
+    } catch {
+      // revert on error
+      setSavedJobIds(savedJobIds);
+    }
   };
 
   const handleApply = async (jobId: string) => {
@@ -159,10 +213,24 @@ function JobsContent() {
                     <div className="w-11 h-11 rounded-2xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold text-lg">
                       {job.organizationName[0]}
                     </div>
-                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-semibold border border-amber-200">
-                      <Clock className="w-3 h-3" />
-                      <span>{daysLeft} {t("days_left")}</span>
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleSave(e, job.id)}
+                        className={`p-1.5 rounded-full transition ${
+                          savedJobIds.has(job.id)
+                            ? "bg-orange-50 text-orange-600"
+                            : "hover:bg-gray-100 text-gray-400 hover:text-orange-600"
+                        }`}
+                        title={savedJobIds.has(job.id) ? (language === "bn" ? "সংরক্ষণ বাতিল করুন" : "Remove bookmark") : (language === "bn" ? "চাকরি সংরক্ষণ করুন" : "Save job")}
+                      >
+                        <Bookmark className={`w-4 h-4 ${savedJobIds.has(job.id) ? "fill-orange-600 text-orange-600" : ""}`} />
+                      </button>
+                      <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-semibold border border-amber-200">
+                        <Clock className="w-3 h-3" />
+                        <span>{daysLeft} {t("days_left")}</span>
+                      </span>
+                    </div>
                   </div>
 
                   <h3 className="mt-4 font-black text-gray-900 text-lg line-clamp-1 hover:text-orange-600 transition">

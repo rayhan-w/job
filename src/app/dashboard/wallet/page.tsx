@@ -19,6 +19,9 @@ export default function WalletPage() {
   const { language, t } = useLanguage();
   const [userData, setUserData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [cashInRequests, setCashInRequests] = useState<any[]>([]);
+  const [cashOutRequests, setCashOutRequests] = useState<any[]>([]);
+  const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   // Cash in modal/form states
@@ -26,6 +29,7 @@ export default function WalletPage() {
   const [cashInMethod, setCashInMethod] = useState("bKash");
   const [cashInSender, setCashInSender] = useState("");
   const [cashInTrxId, setCashInTrxId] = useState("");
+  const [cashInNote, setCashInNote] = useState("");
   const [cashInSubmitting, setCashInSubmitting] = useState(false);
   const [cashInMsg, setCashInMsg] = useState<{ text: string; error?: boolean } | null>(null);
 
@@ -38,16 +42,27 @@ export default function WalletPage() {
 
   const fetchWalletData = async () => {
     try {
-      const res = await fetch("/api/auth/me");
-      const data = await res.json();
-      if (data?.user) {
-        setUserData(data.user);
-        // fetch transactions
-        const txRes = await fetch("/api/wallet/transactions");
-        if (txRes.ok) {
-          const txData = await txRes.json();
-          setTransactions(txData.transactions || []);
-        }
+      const [userRes, txRes, settingsRes] = await Promise.all([
+        fetch("/api/auth/me"),
+        fetch("/api/wallet/transactions"),
+        fetch("/api/settings"),
+      ]);
+
+      if (userRes.ok) {
+        const uData = await userRes.json();
+        if (uData?.user) setUserData(uData.user);
+      }
+
+      if (txRes.ok) {
+        const txData = await txRes.json();
+        setTransactions(txData.transactions || []);
+        setCashInRequests(txData.cashInRequests || []);
+        setCashOutRequests(txData.cashOutRequests || []);
+      }
+
+      if (settingsRes.ok) {
+        const sData = await settingsRes.json();
+        if (sData?.settings) setSettings(sData.settings);
       }
     } catch {
       //
@@ -73,18 +88,21 @@ export default function WalletPage() {
           method: cashInMethod,
           senderNumber: cashInSender,
           transactionId: cashInTrxId,
+          note: cashInNote,
         }),
       });
       const data = await res.json();
       if (res.ok) {
         setCashInMsg({
-          text: language === "bn"
-            ? "ক্যাশ ইন রিকোয়েস্ট সফলভাবে জমা হয়েছে। অ্যাডমিন অনুমোদনের পর ব্যালেন্সে যোগ হবে।"
-            : "Cash in request submitted successfully. It will be added upon admin approval.",
+          text:
+            language === "bn"
+              ? "ক্যাশ ইন রিকোয়েস্ট জমা হয়েছে (PENDING)। অ্যাডমিন অনুমোদনের সাথে সাথে ব্যালেন্সে যোগ হবে।"
+              : "Cash in request submitted (PENDING). Balance will be credited upon admin approval.",
         });
         setCashInAmount("");
         setCashInSender("");
         setCashInTrxId("");
+        setCashInNote("");
         fetchWalletData();
       } else {
         setCashInMsg({
@@ -106,6 +124,7 @@ export default function WalletPage() {
     e.preventDefault();
     setCashOutSubmitting(true);
     setCashOutMsg(null);
+
     try {
       const res = await fetch("/api/wallet/cash-out", {
         method: "POST",
@@ -119,9 +138,10 @@ export default function WalletPage() {
       const data = await res.json();
       if (res.ok) {
         setCashOutMsg({
-          text: language === "bn"
-            ? "ক্যাশ আউট রিকোয়েস্ট জমা হয়েছে এবং টাকা হোল্ড করা হয়েছে।"
-            : "Cash out request submitted and amount placed on hold.",
+          text:
+            language === "bn"
+              ? "ক্যাশ আউট রিকোয়েস্ট সফলভাবে জমা হয়েছে এবং সমপরিমাণ টাকা হোল্ডে রাখা হয়েছে।"
+              : "Cash out request submitted and amount placed on hold.",
         });
         setCashOutAmount("");
         setCashOutReceiver("");
@@ -142,7 +162,23 @@ export default function WalletPage() {
     }
   };
 
-  const currentBalance = userData?.wallet?.balance ?? 2450;
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8">
+        <DashboardSidebar userRole="CUSTOMER" />
+        <div className="flex-1 space-y-6">
+          <div className="h-8 w-48 bg-gray-200 animate-pulse rounded-xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="h-36 bg-gray-100 animate-pulse rounded-3xl" />
+            <div className="h-36 bg-gray-100 animate-pulse rounded-3xl" />
+          </div>
+          <div className="h-72 bg-gray-100 animate-pulse rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
+
+  const currentBalance = userData?.wallet?.balance ?? 0;
   const heldBalance = userData?.wallet?.heldBalance ?? 0;
 
   return (
@@ -157,7 +193,7 @@ export default function WalletPage() {
               {language === "bn" ? "আমার ওয়ালেট" : "My Wallet"}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              {language === "bn" ? "ম্যানুয়াল ওয়ালেট ব্যালেন্স ও লেনদেন হিসাব" : "Manual wallet ledger & movements"}
+              {language === "bn" ? "সরাসরি ওয়ালেট ব্যালেন্স ও লেনদেন হিসাব" : "Wallet balance & movements"}
             </p>
           </div>
 
@@ -174,8 +210,8 @@ export default function WalletPage() {
                 <CheckCircle2 className="w-4 h-4" />
                 <span>
                   {language === "bn"
-                    ? "যেকোনো পণ্য বা কুইজ প্যাকেজ কেনার জন্য প্রস্তুত"
-                    : "Ready for purchasing any product or quiz package"}
+                    ? "যেকোনো চাকরি বা কুইজ প্যাকেজ কেনার জন্য প্রস্তুত"
+                    : "Ready for purchasing any job circular or quiz package"}
                 </span>
               </div>
             </div>
@@ -193,8 +229,8 @@ export default function WalletPage() {
                 <Clock className="w-4 h-4 shrink-0" />
                 <span>
                   {language === "bn"
-                    ? "অ্যাডমিন অনুমোদনের পর পেমেন্ট পাঠানো হবে বা রিজেক্ট হলে ফেরত আসবে"
-                    : "Will be disbursed upon approval or refunded if rejected"}
+                    ? "অ্যাডমিন অনুমোদনের পর প্রদান করা হবে বা বাতিল হলে ব্যালেন্সে ফেরত আসবে"
+                    : "Will be disbursed upon approval or refunded back if rejected"}
                 </span>
               </div>
             </div>
@@ -210,7 +246,7 @@ export default function WalletPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-base">
-                    {language === "bn" ? "ক্যাশ ইন (টাকা ঢোকান)" : "Cash In"}
+                    {language === "bn" ? "ক্যাশ ইন (টাকা জমা করুন)" : "Cash In"}
                   </h3>
                   <p className="text-xs text-gray-500">
                     {language === "bn" ? "বিকাশ / নগদ / রকেট দিয়ে টাকা পাঠান" : "Send money via bKash / Nagad / Rocket"}
@@ -219,16 +255,53 @@ export default function WalletPage() {
               </div>
 
               {/* Official Payment Instructions */}
-              <div className="bg-gray-50 p-4 rounded-2xl text-xs text-gray-600 space-y-1 mb-5 border border-gray-200">
+              <div className="bg-gray-50 p-4 rounded-2xl text-xs text-gray-600 space-y-1.5 mb-5 border border-gray-200">
                 <div className="font-bold text-gray-800 mb-1">
                   {language === "bn" ? "অফিসিয়াল নম্বরসমূহ (Send Money):" : "Official Accounts (Send Money):"}
                 </div>
-                <div>bKash (Personal): <span className="font-mono font-bold text-gray-900">01700000000</span></div>
-                <div>Nagad (Personal): <span className="font-mono font-bold text-gray-900">01800000000</span></div>
-                <div>Rocket (Personal): <span className="font-mono font-bold text-gray-900">01900000000</span></div>
+                <div>
+                  bKash (Personal):{" "}
+                  <span className="font-mono font-bold text-gray-900">
+                    {settings.bkashNumber || "(অ্যাডমিন সেটিংস থেকে নম্বর যুক্ত করা হবে)"}
+                  </span>
+                </div>
+                <div>
+                  Nagad (Personal):{" "}
+                  <span className="font-mono font-bold text-gray-900">
+                    {settings.nagadNumber || "(অ্যাডমিন সেটিংস থেকে নম্বর যুক্ত করা হবে)"}
+                  </span>
+                </div>
+                <div>
+                  Rocket (Personal):{" "}
+                  <span className="font-mono font-bold text-gray-900">
+                    {settings.rocketNumber || "(অ্যাডমিন সেটিংস থেকে নম্বর যুক্ত করা হবে)"}
+                  </span>
+                </div>
               </div>
 
               <form onSubmit={handleCashIn} className="space-y-4">
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-emerald-900 space-y-1">
+                  <div className="font-bold flex items-center justify-between">
+                    <span>
+                      {cashInMethod === "bKash" && (language === "bn" ? "অফিসিয়াল bKash নম্বর:" : "Official bKash Number:")}
+                      {cashInMethod === "Nagad" && (language === "bn" ? "অফিসিয়াল Nagad নম্বর:" : "Official Nagad Number:")}
+                      {cashInMethod === "Rocket" && (language === "bn" ? "অফিসিয়াল Rocket নম্বর:" : "Official Rocket Number:")}
+                      {cashInMethod === "Bank" && (language === "bn" ? "অফিসিয়াল ব্যাংক:" : "Official Bank:")}
+                    </span>
+                    <span className="font-mono font-bold text-sm text-emerald-800 select-all">
+                      {cashInMethod === "bKash" && (settings?.bkashNumber || "01700-000000")}
+                      {cashInMethod === "Nagad" && (settings?.nagadNumber || "01700-000000")}
+                      {cashInMethod === "Rocket" && (settings?.rocketNumber || "01700-000000")}
+                      {cashInMethod === "Bank" && (settings?.bankInfo || "City Bank: 1234567890")}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700">
+                    {language === "bn"
+                      ? "প্রথমে উক্ত নম্বরে টাকা পাঠিয়ে নিচে আপনার নম্বর ও TrxID দিন।"
+                      : "Send money to the number above and provide your sender number & TrxID below."}
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     {language === "bn" ? "পরিমাণ (৳)" : "Amount (৳)"}
@@ -237,7 +310,7 @@ export default function WalletPage() {
                     type="number"
                     required
                     min="10"
-                    placeholder="e.g. 500"
+                    placeholder="e.g. 100"
                     value={cashInAmount}
                     onChange={(e) => setCashInAmount(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none"
@@ -252,7 +325,7 @@ export default function WalletPage() {
                     <select
                       value={cashInMethod}
                       onChange={(e) => setCashInMethod(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none bg-white"
                     >
                       <option value="bKash">bKash</option>
                       <option value="Nagad">Nagad</option>
@@ -282,17 +355,30 @@ export default function WalletPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. BL9A8X76"
+                    placeholder="e.g. TEST2026AUDIT"
                     value={cashInTrxId}
                     onChange={(e) => setCashInTrxId(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none uppercase font-mono"
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    {language === "bn" ? "নোট / রেফারেন্স (ঐচ্ছিক)" : "Note / Remarks (Optional)"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={language === "bn" ? "e.g. কুইজ ফি বা জরুরি ডিপোজিট" : "e.g. Deposit reference"}
+                    value={cashInNote}
+                    onChange={(e) => setCashInNote(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
                 <button
                   type="submit"
                   disabled={cashInSubmitting}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm disabled:opacity-60"
                 >
                   {cashInSubmitting
                     ? (language === "bn" ? "পাঠানো হচ্ছে..." : "Submitting...")
@@ -300,7 +386,7 @@ export default function WalletPage() {
                 </button>
 
                 {cashInMsg && (
-                  <p className={`text-xs text-center font-medium ${cashInMsg.error ? "text-red-600" : "text-emerald-600"}`}>
+                  <p className={`text-xs text-center font-medium ${cashInMsg.error ? "text-red-600" : "text-emerald-700 font-bold"}`}>
                     {cashInMsg.text}
                   </p>
                 )}
@@ -315,41 +401,28 @@ export default function WalletPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-base">
-                    {language === "bn" ? "ক্যাশ আউট (টাকা তুলুন)" : "Cash Out"}
+                    {language === "bn" ? "ক্যাশ আউট (উইথড্র)" : "Cash Out (Withdraw)"}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    {language === "bn" ? "বিকাশ / নগদ / রকেটে টাকা উত্তোলন" : "Withdraw money to bKash / Nagad / Rocket"}
+                    {language === "bn" ? "ব্যালেন্স থেকে টাকা উত্তোলন করুন" : "Withdraw funds to your account"}
                   </p>
                 </div>
-              </div>
-
-              <div className="bg-blue-50/60 p-4 rounded-2xl text-xs text-blue-800 space-y-1 mb-5 border border-blue-100">
-                <div>{language === "bn" ? "• সর্বনিম্ন ক্যাশ আউট: ৳ ১০০, সর্বোচ্চ: ৳ ২৫,০০০" : "• Min Cash Out: ৳100, Max: ৳25,000"}</div>
-                <div>{language === "bn" ? "• ক্যাশ আউট সার্ভিস চার্জ: ২% (রিকোয়েস্টের সাথে স্বয়ংক্রিয়ভাবে কাটা হবে)" : "• Cash Out Fee: 2% (automatically deducted)"}</div>
-                <div>{language === "bn" ? "• রিকোয়েস্ট পাঠানোর সাথে সাথে টাকা হোল্ড করা হবে।" : "• Funds held immediately upon request."}</div>
               </div>
 
               <form onSubmit={handleCashOut} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    {language === "bn" ? "উত্তোলনের পরিমাণ (৳)" : "Withdrawal Amount (৳)"}
+                    {language === "bn" ? "উত্তোলনের পরিমাণ (৳)" : "Amount (৳)"}
                   </label>
                   <input
                     type="number"
                     required
                     min="100"
-                    max="25000"
-                    placeholder="e.g. 1000"
+                    placeholder="Min: 100"
                     value={cashOutAmount}
                     onChange={(e) => setCashOutAmount(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-blue-500 focus:outline-none"
                   />
-                  {Number(cashOutAmount) > 0 && (
-                    <div className="text-[11px] text-gray-500 mt-1">
-                      {language === "bn" ? "ফি:" : "Fee:"} ৳ {(Number(cashOutAmount) * 0.02).toFixed(2)} |{" "}
-                      {language === "bn" ? "আপনি পাবেন:" : "You receive:"} ৳ {(Number(cashOutAmount) * 0.98).toFixed(2)}
-                    </div>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -360,16 +433,17 @@ export default function WalletPage() {
                     <select
                       value={cashOutMethod}
                       onChange={(e) => setCashOutMethod(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-blue-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-blue-500 focus:outline-none bg-white"
                     >
                       <option value="bKash">bKash</option>
                       <option value="Nagad">Nagad</option>
                       <option value="Rocket">Rocket</option>
+                      <option value="Bank">Bank</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      {language === "bn" ? "যে নম্বরে টাকা নিবেন" : "Receiving Number"}
+                      {language === "bn" ? "গ্রাহকের নম্বর" : "Account Number"}
                     </label>
                     <input
                       type="text"
@@ -385,7 +459,7 @@ export default function WalletPage() {
                 <button
                   type="submit"
                   disabled={cashOutSubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm disabled:opacity-60"
                 >
                   {cashOutSubmitting
                     ? (language === "bn" ? "পাঠানো হচ্ছে..." : "Submitting...")
@@ -393,7 +467,7 @@ export default function WalletPage() {
                 </button>
 
                 {cashOutMsg && (
-                  <p className={`text-xs text-center font-medium ${cashOutMsg.error ? "text-red-600" : "text-emerald-600"}`}>
+                  <p className={`text-xs text-center font-medium ${cashOutMsg.error ? "text-red-600" : "text-emerald-700 font-bold"}`}>
                     {cashOutMsg.text}
                   </p>
                 )}
@@ -401,11 +475,106 @@ export default function WalletPage() {
             </div>
           </div>
 
-          {/* Immutable Transaction History Table */}
+          {/* Pending and Recent Requests */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-6 space-y-4">
+            <h2 className="text-base font-black text-gray-900 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-orange-600" />
+              <span>{language === "bn" ? "পেন্ডিং ও সাম্প্রতিক রিকোয়েস্ট সমূহ" : "Pending & Recent Requests"}</span>
+            </h2>
+
+            {cashInRequests.length === 0 && cashOutRequests.length === 0 ? (
+              <p className="text-xs text-gray-400 py-3 text-center">
+                {language === "bn" ? "কোনো পেন্ডিং বা সাম্প্রতিক রিকোয়েস্ট নেই।" : "No pending or recent requests."}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-gray-600">
+                  <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[11px] border-b border-gray-100">
+                    <tr>
+                      <th className="px-4 py-3">{language === "bn" ? "তারিখ" : "Date"}</th>
+                      <th className="px-4 py-3">{language === "bn" ? "ধরণ" : "Type"}</th>
+                      <th className="px-4 py-3">{language === "bn" ? "পরিমাণ" : "Amount"}</th>
+                      <th className="px-4 py-3">{language === "bn" ? "মেথড / TrxID" : "Method / TrxID"}</th>
+                      <th className="px-4 py-3">{language === "bn" ? "নোট" : "Note"}</th>
+                      <th className="px-4 py-3">{language === "bn" ? "স্ট্যাটাস" : "Status"}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {cashInRequests.map((req) => (
+                      <tr key={"in-" + req.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3 text-gray-500">
+                          {new Date(req.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-US", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="px-4 py-3 font-bold text-emerald-700">ক্যাশ ইন (Cash In)</td>
+                        <td className="px-4 py-3 font-black text-emerald-600">৳ {req.amount}</td>
+                        <td className="px-4 py-3 font-mono">
+                          {req.method} • {req.transactionId}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500">{req.note || "-"}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              req.status === "APPROVED"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : req.status === "REJECTED"
+                                ? "bg-red-50 text-red-700 border border-red-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            }`}
+                          >
+                            {req.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {cashOutRequests.map((req) => (
+                      <tr key={"out-" + req.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3 text-gray-500">
+                          {new Date(req.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-US", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="px-4 py-3 font-bold text-blue-700">ক্যাশ আউট (Cash Out)</td>
+                        <td className="px-4 py-3 font-black text-blue-600">৳ {req.amount}</td>
+                        <td className="px-4 py-3 font-mono">
+                          {req.method} • {req.receiverNumber}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500">-</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              req.status === "APPROVED"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : req.status === "REJECTED"
+                                ? "bg-red-50 text-red-700 border border-red-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            }`}
+                          >
+                            {req.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Real Ledger Transactions Table */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-100">
               <h2 className="text-lg font-black text-gray-900">
-                {language === "bn" ? "লেনদেন বিবরণ (Immutable Ledger)" : "Transaction History"}
+                {language === "bn" ? "অপরিবর্তনযোগ্য লেজার হিসাব (Immutable Ledger)" : "Transaction History"}
               </h2>
             </div>
 
@@ -421,45 +590,47 @@ export default function WalletPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  <tr className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 text-xs text-gray-500">
-                      {language === "bn" ? "১০ জুন ২০২৬, ১২:৩০" : "10 Jun 2026, 12:30"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">CASH_IN</span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-emerald-600">+৳ ১,০০০.০০</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">৳ ২,৪৫০.০০</td>
-                    <td className="px-6 py-4 text-xs">
-                      {language === "bn" ? "বিকাশ ক্যাশ-ইন অনুমোদিত (TrxID: 9X872AB)" : "Approved cash-in via bKash (TrxID: 9X872AB)"}
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 text-xs text-gray-500">
-                      {language === "bn" ? "০৫ জুন ২০২৬, ১৫:৪৫" : "05 Jun 2026, 15:45"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-semibold bg-purple-50 text-purple-700 px-2 py-0.5 rounded">QUIZ_BONUS</span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-emerald-600">+৳ ১০০.০০</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">৳ ১,৪৫০.০০</td>
-                    <td className="px-6 py-4 text-xs">
-                      {language === "bn" ? "সাধারণ জ্ঞান কুইজে টার্গেট স্কোর বোনাস" : "Target score bonus for General Knowledge quiz"}
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 text-xs text-gray-500">
-                      {language === "bn" ? "০১ জুন ২০২৬, ১০:০০" : "01 Jun 2026, 10:00"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">COMMISSION</span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-emerald-600">+৳ ১৫০.০০</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">৳ ১,৩৫০.০০</td>
-                    <td className="px-6 py-4 text-xs">
-                      {language === "bn" ? "গ্রাহকের পণ্য ক্রয়ের রেফারেল কমিশন" : "Referral commission from customer purchase"}
-                    </td>
-                  </tr>
+                  {transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-xs text-gray-400">
+                        {language === "bn" ? "কোনো পূর্ববর্তী লেনদেন পাওয়া যায়নি।" : "No transaction records found."}
+                      </td>
+                    </tr>
+                  ) : (
+                    transactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50/50">
+                        <td className="px-6 py-4 text-xs text-gray-500">
+                          {new Date(tx.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-US", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                              tx.amount > 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                            }`}
+                          >
+                            {tx.type}
+                          </span>
+                        </td>
+                        <td
+                          className={`px-6 py-4 font-bold ${
+                            tx.amount > 0 ? "text-emerald-600" : "text-red-600"
+                          }`}
+                        >
+                          {tx.amount > 0 ? `+৳ ${tx.amount}` : `-৳ ${Math.abs(tx.amount)}`}
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-gray-900">
+                          ৳ {tx.balanceAfter?.toLocaleString() || "0"}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-gray-500">{tx.note || "-"}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

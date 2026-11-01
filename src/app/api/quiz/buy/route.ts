@@ -48,6 +48,43 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Ensure Product record exists for quiz package
+    const product = await prisma.product.upsert({
+      where: { id: pkg.id },
+      create: {
+        id: pkg.id,
+        nameBn: pkg.nameBn,
+        nameEn: pkg.nameEn || pkg.nameBn,
+        costPrice: 0,
+        salePrice: pkg.price,
+        category: "QUIZ_PACKAGE",
+        isDigital: true,
+      },
+      update: {
+        salePrice: pkg.price,
+      },
+    });
+
+    // Create Order record in database
+    await prisma.order.create({
+      data: {
+        customerId: session.userId,
+        totalAmount: pkg.price,
+        status: "COMPLETED",
+        items: {
+          create: {
+            productId: product.id,
+            quantity: 1,
+            unitCost: 0,
+            unitPrice: pkg.price,
+            totalCost: 0,
+            totalSale: pkg.price,
+            profit: pkg.price,
+          },
+        },
+      },
+    });
+
     // Initialize Quiz Attempt
     const attempt = await prisma.quizAttempt.create({
       data: {
