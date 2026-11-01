@@ -8,7 +8,6 @@ import { User, Wallet, LogOut, ShieldAlert, LogIn } from "lucide-react";
 export function Header() {
   const { language, t } = useLanguage();
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -20,8 +19,7 @@ export function Header() {
           setUser(null);
         }
       })
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+      .catch(() => setUser(null));
   }, []);
 
   const handleLogout = async () => {
@@ -71,7 +69,7 @@ export function Header() {
             </Link>
 
             {/* Login (লগইন) placed on the left side with brand - no wrapping, slim & compact */}
-            {!loading && !user && (
+            {!user && (
               <Link
                 href="/login"
                 className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-200/80 transition shadow-xs"
@@ -84,9 +82,7 @@ export function Header() {
 
           {/* Right Side / Authenticated User Pill (when logged in) */}
           <div className="flex items-center gap-2">
-            {loading ? (
-              <div className="w-16 h-7 bg-gray-100 animate-pulse rounded-full" />
-            ) : user ? (
+            {user ? (
               <div className="flex items-center gap-2">
                 {/* Wallet Shortcut */}
                 <Link
