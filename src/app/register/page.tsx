@@ -58,8 +58,8 @@ function RegisterContent() {
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
       <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl mx-auto shadow-blue-200 shadow-md">
-            JQ
+          <div className="w-12 h-12 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl mx-auto shadow-orange-200 shadow-md">
+            W
           </div>
           <h1 className="mt-4 text-2xl font-black text-gray-900 tracking-tight">
             {language === "bn" ? "নতুন অ্যাকাউন্ট খুলুন" : "Create an Account"}

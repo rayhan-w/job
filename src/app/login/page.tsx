@@ -50,8 +50,8 @@ export default function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl mx-auto shadow-emerald-200 shadow-md">
-            JQ
+          <div className="w-12 h-12 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl mx-auto shadow-orange-200 shadow-md">
+            W
           </div>
           <h1 className="mt-4 text-2xl font-black text-gray-900 tracking-tight">
             {language === "bn" ? "অ্যাকাউন্টে লগইন করুন" : "Sign In to Your Account"}
@@ -150,10 +150,13 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="text-center text-xs text-gray-500">
-          {language === "bn" ? "অ্যাকাউন্ট নেই?" : "Don't have an account?"}{" "}
-          <Link href="/register" className="font-bold text-emerald-600 hover:text-emerald-700">
-            {language === "bn" ? "রেজিস্টার করুন" : "Register here"}
+        <div className="text-center text-xs text-gray-600 bg-orange-50/80 p-3.5 rounded-2xl border border-orange-200/80">
+          <span>{language === "bn" ? "নতুন অ্যাকাউন্ট প্রয়োজন? " : "Don't have an account? "}</span>
+          <Link
+            href="/register"
+            className="font-bold text-orange-600 hover:text-orange-700 underline transition"
+          >
+            {language === "bn" ? "নিবন্ধন করুন (Create account)" : "Create account / Register"}
           </Link>
         </div>
       </div>

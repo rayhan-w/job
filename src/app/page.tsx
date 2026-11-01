@@ -25,6 +25,7 @@ import {
   UserCheck,
   Laptop,
   Users,
+  HelpCircle,
 } from "lucide-react";
 
 function toBanglaNumber(num: number): string {
@@ -106,9 +107,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col gap-12 pb-16 pt-2">
-      {/* 1. SEARCH SECTION in Card Style (owner liked this card style) */}
-      <section id="search-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-24">
+    <div className="flex flex-col gap-12 pb-16 pt-8 sm:pt-12">
+      {/* 1. SEARCH SECTION in Card Style (owner liked this card style) - sits visibly lower with proper breathing room */}
+      <section id="search-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-28">
         <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xl shadow-orange-500/5 p-6 sm:p-8 space-y-4">
           {/* FIX 2: Badge "১-ক্লিক আবেদন সক্রিয়" completely removed */}
           <div className="border-b border-gray-100 pb-3">
@@ -421,6 +422,39 @@ export default function HomePage() {
                   : "Employers review your profile and directly schedule online or in-person interviews."}
               </p>
             </div>
+          </div>
+
+          {/* FIX 3: Quiz entry in lower area (ONE single clearly visible, nicely designed place) */}
+          <div className="bg-gradient-to-r from-orange-50 via-amber-50/60 to-orange-50 rounded-2xl border border-orange-200/90 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-3.5 w-full sm:w-auto">
+              <div className="w-12 h-12 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-orange-600/20">
+                <HelpCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-gray-950 text-base">
+                    {language === "bn" ? "কুইজ প্রতিযোগিতা ও পুরস্কার" : "Quiz Contest & Rewards"}
+                  </h3>
+                  <span className="text-[10px] bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded-full border border-orange-200">
+                    {language === "bn" ? "লাইভ" : "LIVE"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  {language === "bn"
+                    ? "সাধারণ জ্ঞান ও বিষয়ভিত্তিক কুইজে অংশ নিন এবং জিতে নিন আকর্ষণীয় বোনাস।"
+                    : "Participate in quizzes, test your knowledge, and earn instant bonuses."}
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/quiz"
+              className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-2.5 rounded-full text-xs transition shadow-sm shadow-orange-600/20 flex items-center justify-center gap-2 shrink-0"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>{language === "bn" ? "কুইজ খেলুন" : "Play Quiz"}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </section>

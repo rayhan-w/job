@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "./LanguageContext";
-import { Search, Globe, User, Wallet, LogOut, ShieldAlert, ArrowRight, Sparkles, HelpCircle } from "lucide-react";
+import { User, Wallet, LogOut, ShieldAlert, LogIn } from "lucide-react";
 
 export function Header() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, t } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,10 +56,10 @@ export function Header() {
         </div>
       )}
 
-      {/* Slim & Compact Floating Header */}
+      {/* Slim & Compact Floating Header (v4: Logo + WOJOB + Login on left side only) */}
       <header className="sticky top-3 z-50 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full transition-all duration-200">
-        <div className="bg-white/95 backdrop-blur-md rounded-full border border-gray-200/80 shadow-md shadow-orange-500/5 px-4 sm:px-5 h-13 flex items-center justify-between">
-          {/* Left Side: Brand Logo + Quiz Option */}
+        <div className="bg-white/95 backdrop-blur-md rounded-full border border-gray-200/80 shadow-md shadow-orange-500/5 px-4 sm:px-5 h-12 flex items-center justify-between">
+          {/* Left Side: Brand Logo (WOJOB) + Login (লগইন) */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-8 h-8 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shadow-sm group-hover:scale-105 transition">
@@ -70,36 +70,22 @@ export function Header() {
               </div>
             </Link>
 
-            {/* Quiz Link directly on left side as requested */}
-            <Link
-              href="/quiz"
-              className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-200/80 transition shadow-xs"
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-orange-600" />
-              <span>{language === "bn" ? "কুইজ" : "Quiz"}</span>
-            </Link>
+            {/* Login (লগইন) placed on the left side with brand - no wrapping, slim & compact */}
+            {!loading && !user && (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-200/80 transition shadow-xs"
+              >
+                <LogIn className="w-3.5 h-3.5 text-orange-600" />
+                <span>{language === "bn" ? "লগইন" : "Login"}</span>
+              </Link>
+            )}
           </div>
 
-          {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-gray-600">
-            <Link href="/" className="hover:text-orange-600 transition">
-              {t("nav_home")}
-            </Link>
-            <Link href="/jobs" className="hover:text-orange-600 transition">
-              {t("nav_jobs")}
-            </Link>
-            <Link href="/products" className="hover:text-orange-600 transition">
-              {t("nav_products")}
-            </Link>
-            <Link href="/contact" className="hover:text-orange-600 transition">
-              {language === "bn" ? "যোগাযোগ" : "Contact"}
-            </Link>
-          </nav>
-
-          {/* Right Side: Login & Register (নিবন্ধন করুন) */}
+          {/* Right Side / Authenticated User Pill (when logged in) */}
           <div className="flex items-center gap-2">
             {loading ? (
-              <div className="w-20 h-7 bg-gray-100 animate-pulse rounded-full" />
+              <div className="w-16 h-7 bg-gray-100 animate-pulse rounded-full" />
             ) : user ? (
               <div className="flex items-center gap-2">
                 {/* Wallet Shortcut */}
@@ -129,23 +115,7 @@ export function Header() {
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Link
-                  href="/login"
-                  className="text-gray-700 hover:text-orange-600 px-3 py-1.5 text-xs font-bold transition"
-                >
-                  {language === "bn" ? "লগইন" : "Login"}
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-sm shadow-orange-500/20 flex items-center gap-1"
-                >
-                  <span>{language === "bn" ? "নিবন্ধন করুন" : "Register"}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </header>
