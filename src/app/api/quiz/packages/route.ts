@@ -58,3 +58,72 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session || (session.role !== "SUPER_ADMIN" && session.role !== "ADMIN_STAFF")) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
+
+    const {
+      nameBn,
+      nameEn,
+      bookId,
+      questionCount = 10,
+      timeLimitMinutes = 10,
+      price = 50,
+      targetScore = 8,
+      bonusAmount = 100,
+      status = "ACTIVE",
+    } = await req.json();
+
+    if (!nameBn || !bookId) {
+      return NextResponse.json({ error: "Package name (Bangla) and Book ID are required" }, { status: 400 });
+    }
+
+    const pkg = await prisma.quizPackage.create({
+      data: {
+        nameBn,
+        nameEn: nameEn || nameBn,
+        bookId,
+        questionCount: Number(questionCount),
+        timeLimitMinutes: Number(timeLimitMinutes),
+        price: Number(price),
+        targetScore: Number(targetScore),
+        bonusAmount: Number(bonusAmount),
+        status,
+      },
+    });
+
+    return NextResponse.json({ success: true, package: pkg });
+  } catch (error: any) {
+    console.error("Create quiz package error:", error);
+    return NextResponse.json({ error: error.message || "Failed to create package" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session || (session.role !== "SUPER_ADMIN" && session.role !== "ADMIN_STAFF")) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Package ID is required" }, { status: 400 });
+    }
+
+    await prisma.quizPackage.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: "Quiz package deleted successfully" });
+  } catch (error: any) {
+    console.error("Delete quiz package error:", error);
+    return NextResponse.json({ error: error.message || "Failed to delete package" }, { status: 500 });
+  }
+}
