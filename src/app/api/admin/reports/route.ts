@@ -30,7 +30,7 @@ export async function GET() {
     const totalQuizAttempts = await prisma.quizAttempt.count();
     const totalQuizBonusesPaid = await prisma.walletTransaction.aggregate({
       _sum: { amount: true },
-      where: { type: "QUIZ_BONUS" },
+      where: { type: { in: ["QUIZ_BONUS", "QUIZ_REWARD"] } },
     });
 
     return NextResponse.json({

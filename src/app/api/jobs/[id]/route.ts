@@ -8,27 +8,42 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const session = await getSession();
 
     const job = await prisma.job.findUnique({
       where: { id },
       include: {
         category: true,
         workplaceDistrict: true,
-        institution: true,
+        institution: {
+          select: {
+            id: true,
+            nameBn: true,
+            nameEn: true,
+            logo: true,
+            address: true,
+            verified: true,
+          },
+        },
+        _count: {
+          select: { applications: true },
+        },
       },
     });
 
     if (!job) {
-      return NextResponse.json({ error: "Job not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Job circular not found" },
+        { status: 404 }
+      );
     }
 
-    // Check user session & application status
     let hasApplied = false;
-    let isLoggedIn = false;
     let userRole = null;
+    let isLoggedIn = false;
     let profileComplete = false;
+    let walletBalance = 0;
 
-    const session = await getSession();
     if (session) {
       isLoggedIn = true;
       userRole = session.role;
@@ -41,60 +56,34 @@ export async function GET(
               include: {
                 candidateProfile: true,
                 educations: true,
+                wallet: true,
               },
+            },
+            applications: {
+              where: { jobId: id },
             },
           },
         });
 
         if (customer) {
-          const profile = customer.user.candidateProfile;
-          const educations = customer.user.educations;
-          if (profile && profile.phone && educations.length > 0) {
-            profileComplete = true;
-          }
-
-          const existingApp = await prisma.jobApplication.findUnique({
-            where: {
-              jobId_customerId: {
-                jobId: id,
-                customerId: customer.id,
-              },
-            },
-          });
-
-          if (existingApp) {
-            hasApplied = true;
-          }
+          hasApplied = customer.applications.length > 0;
+          const userObj = customer.user;
+          const phoneValid = Boolean(userObj?.candidateProfile?.phone || userObj?.phone);
+          const hasEdu = Boolean(userObj?.educations && userObj.educations.length > 0);
+          profileComplete = phoneValid && hasEdu;
+          walletBalance = userObj?.wallet?.balance || 0;
         }
       }
     }
 
-    let walletBalance = 0;
-    let candidateUser = null;
-    if (session) {
-      const w = await prisma.wallet.findUnique({ where: { userId: session.userId } });
-      if (w) walletBalance = w.balance;
-
-      candidateUser = await prisma.user.findUnique({
-        where: { id: session.userId },
-        include: {
-          candidateProfile: true,
-          educations: true,
-          experiences: true,
-          skills: true,
-          cvFile: true,
-        },
-      });
-    }
-
     return NextResponse.json({
+      success: true,
       job,
       hasApplied,
       isLoggedIn,
       userRole,
       profileComplete,
       walletBalance,
-      candidateUser,
     });
   } catch (error) {
     console.error("GET job by id error:", error);
@@ -123,13 +112,15 @@ export async function PATCH(
     if (body.titleBn !== undefined) updateData.titleBn = body.titleBn;
     if (body.titleEn !== undefined) updateData.titleEn = body.titleEn;
     if (body.organizationName !== undefined) updateData.organizationName = body.organizationName;
-    if (body.logoUrl !== undefined) updateData.logoUrl = body.logoUrl;
-    if (body.applicationFee !== undefined) updateData.applicationFee = Number(body.applicationFee);
+    if (body.logoUrl !== undefined) updateData.logoUrl = body.logoUrl || null;
+    if (body.applicationFee !== undefined) updateData.applicationFee = Math.max(0, Number(body.applicationFee) || 0);
     if (body.categoryId !== undefined) updateData.categoryId = body.categoryId;
     if (body.jobType !== undefined) updateData.jobType = body.jobType;
     if (body.workplaceLocation !== undefined) updateData.workplaceLocation = body.workplaceLocation;
-    if (body.workplaceDistrictId !== undefined) updateData.workplaceDistrictId = body.workplaceDistrictId ? Number(body.workplaceDistrictId) : null;
-    if (body.vacancy !== undefined) updateData.vacancy = Number(body.vacancy);
+    if (body.workplaceDistrictId !== undefined) {
+      updateData.workplaceDistrictId = body.workplaceDistrictId ? Number(body.workplaceDistrictId) : null;
+    }
+    if (body.vacancy !== undefined) updateData.vacancy = Math.max(1, Number(body.vacancy) || 1);
     if (body.salaryRange !== undefined) updateData.salaryRange = body.salaryRange;
     if (body.educationReq !== undefined) updateData.educationReq = body.educationReq;
     if (body.experienceReq !== undefined) updateData.experienceReq = body.experienceReq;
@@ -165,11 +156,45 @@ export async function DELETE(
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
-    await prisma.job.delete({
+    const job = await prisma.job.findUnique({
       where: { id },
+      include: {
+        _count: {
+          select: { applications: true },
+        },
+      },
     });
 
-    return NextResponse.json({ success: true, message: "Job deleted successfully" });
+    if (!job) {
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
+    }
+
+    const appsCount = job._count.applications;
+
+    if (appsCount > 0) {
+      // Safe delete: Archive the job so applications and candidate records are preserved
+      await prisma.job.update({
+        where: { id },
+        data: { status: "ARCHIVED" },
+      });
+
+      return NextResponse.json({
+        success: true,
+        archived: true,
+        message: `চাকরিটিতে ${appsCount} টি আবেদন জমা থাকায় এটি সাইট থেকে আর্কাইভ করা হয়েছে এবং সকল আবেদন সংরক্ষিত রয়েছে।`,
+      });
+    } else {
+      // Hard delete: 0 applications
+      await prisma.job.delete({
+        where: { id },
+      });
+
+      return NextResponse.json({
+        success: true,
+        archived: false,
+        message: "চাকরিটি সফলভাবে সম্পূর্ণ মুছে ফেলা হয়েছে।",
+      });
+    }
   } catch (error: any) {
     console.error("Delete job error:", error);
     return NextResponse.json({ error: error.message || "Failed to delete job" }, { status: 500 });

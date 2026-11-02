@@ -36,10 +36,10 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 100,
+      take: 200,
     });
 
-    // 2. All Jobs (published, pending, expired, closed)
+    // 2. All Jobs (published, pending, expired, closed, archived)
     const jobs = await prisma.job.findMany({
       include: {
         category: true,
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 100,
     });
 
     // 4. Cash-out requests
@@ -70,10 +70,10 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 100,
     });
 
-    // 5. Quiz Packages
+    // 5. Quiz Packages (including archived)
     const quizPackages = await prisma.quizPackage.findMany({
       include: {
         book: {
@@ -102,10 +102,58 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 100,
     });
 
-    // 7. Settings
+    // 7. Structure: Districts
+    const districts = await prisma.district.findMany({
+      include: {
+        channelPartner: {
+          include: {
+            user: { select: { id: true, name: true, phone: true, email: true, status: true } },
+          },
+        },
+        _count: {
+          select: { agents: true, candidateProfiles: true, jobs: true },
+        },
+      },
+      orderBy: { id: "asc" },
+    });
+
+    // 8. Structure: Channel Partners
+    const channelPartners = await prisma.channelPartner.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, phone: true, email: true, status: true },
+        },
+        district: true,
+        _count: {
+          select: { agents: true, customers: true, commissions: true },
+        },
+      },
+      orderBy: { districtId: "asc" },
+    });
+
+    // 9. Structure: Agents
+    const agents = await prisma.agent.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, phone: true, email: true, status: true },
+        },
+        district: true,
+        channelPartner: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+        _count: {
+          select: { customers: true, commissions: true, cashIns: true },
+        },
+      },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+    });
+
+    // 10. Settings
     const settings = await prisma.setting.findMany();
 
     return NextResponse.json({
@@ -116,6 +164,9 @@ export async function GET(req: NextRequest) {
       cashOutRequests,
       agentCashInConfirmations,
       quizPackages,
+      districts,
+      channelPartners,
+      agents,
       settings,
     });
   } catch (error: any) {

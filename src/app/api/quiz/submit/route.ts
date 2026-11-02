@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { creditWallet } from "@/lib/wallet";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,7 +34,7 @@ export async function POST(req: NextRequest) {
     let wrongCount = 0;
     let totalScore = 0;
 
-    const answerRecords = [];
+    const answerRecords: any[] = [];
 
     for (const q of questions) {
       const selected = answers[q.id];
@@ -57,71 +56,104 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Save answer records
-    if (answerRecords.length > 0) {
-      await prisma.quizAnswer.createMany({
-        data: answerRecords,
-      });
+    // Calculate Quiz Reward per Admin rules:
+    // target points X -> bonus ৳Y, plus optional perPointRate * totalScore
+    const pkg = attempt.package;
+    const isRewardEnabled = pkg.rewardEnabled !== false;
+    let bonusAwarded = false;
+    let rewardAmount = 0;
+
+    if (isRewardEnabled && totalScore >= pkg.targetScore) {
+      let calcAmount = pkg.bonusAmount || 0;
+      if (pkg.perPointRate && pkg.perPointRate > 0) {
+        calcAmount += Math.round(totalScore * pkg.perPointRate);
+      }
+
+      if (calcAmount > 0) {
+        bonusAwarded = true;
+        rewardAmount = calcAmount;
+      }
     }
 
-    // Check Bonus Rule (Acceptance test 21)
-    let bonusAwarded = false;
-    let bonusAmount = 0;
+    // Atomic execution: save answers, complete attempt, credit QUIZ_REWARD ledger entry
+    await prisma.$transaction(async (tx) => {
+      // 1. Save answer records
+      if (answerRecords.length > 0) {
+        await tx.quizAnswer.createMany({
+          data: answerRecords,
+        });
+      }
 
-    if (totalScore >= attempt.package.targetScore && attempt.package.bonusAmount > 0) {
-      bonusAwarded = true;
-      bonusAmount = attempt.package.bonusAmount;
-
-      // Credit bonus directly to wallet with immutable ledger entry
-      await creditWallet({
-        userId: session.userId,
-        amount: bonusAmount,
-        type: "QUIZ_BONUS",
-        referenceType: "QuizAttempt",
-        referenceId: attempt.id,
-        note: `Target score bonus for quiz: ${attempt.package.nameBn}`,
-        createdBy: "SYSTEM",
-      });
-
-      // Notification
-      await prisma.notification.create({
+      // 2. Update attempt
+      await tx.quizAttempt.update({
+        where: { id: attempt.id },
         data: {
-          userId: session.userId,
-          titleBn: "কুইজ বোনাস পুরস্কার!",
-          titleEn: "Quiz Bonus Reward!",
-          messageBn: `অভিনন্দন! আপনি কুইজে টার্গেট স্কোর অর্জন করায় আপনার ওয়ালেটে ৳ ${bonusAmount} বোনাস যোগ হয়েছে।`,
-          messageEn: `Congratulations! ৳ ${bonusAmount} bonus has been credited to your wallet for reaching the target score.`,
-          link: "/dashboard/wallet",
+          score: totalScore,
+          totalQuestions: questionIds.length,
+          correctCount,
+          wrongCount,
+          timeTakenSeconds,
+          bonusAwarded,
+          status: "COMPLETED",
+          completedAt: new Date(),
         },
       });
-    }
 
-    // Update attempt
-    const updatedAttempt = await prisma.quizAttempt.update({
-      where: { id: attempt.id },
-      data: {
-        score: totalScore,
-        totalQuestions: questionIds.length,
-        correctCount,
-        wrongCount,
-        timeTakenSeconds,
-        bonusAwarded,
-        status: "COMPLETED",
-        completedAt: new Date(),
-      },
+      // 3. Credit wallet reward if qualified
+      if (bonusAwarded && rewardAmount > 0) {
+        let wallet = await tx.wallet.findUnique({
+          where: { userId: session.userId },
+        });
+
+        if (!wallet) {
+          wallet = await tx.wallet.create({
+            data: { userId: session.userId, balance: 0 },
+          });
+        }
+
+        const updatedWallet = await tx.wallet.update({
+          where: { id: wallet.id },
+          data: { balance: { increment: rewardAmount } },
+        });
+
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: "QUIZ_REWARD",
+            amount: rewardAmount,
+            balanceAfter: updatedWallet.balance,
+            referenceType: "QuizAttempt",
+            referenceId: attempt.id,
+            note: `কুইজ রিওয়ার্ড পুরস্কার: ${pkg.nameBn} (স্কোর: ${totalScore}/${questionIds.length})`,
+            createdBy: "SYSTEM",
+          },
+        });
+
+        await tx.notification.create({
+          data: {
+            userId: session.userId,
+            titleBn: "কুইজ রিওয়ার্ড পুরস্কার!",
+            titleEn: "Quiz Reward Credited!",
+            messageBn: `অভিনন্দন! আপনি কুইজে টার্গেট স্কোর অর্জন করায় আপনার ওয়ালেটে ৳${rewardAmount} পুরস্কার যোগ হয়েছে।`,
+            messageEn: `Congratulations! ৳${rewardAmount} quiz reward has been credited to your wallet for reaching target score.`,
+            link: "/dashboard/wallet",
+          },
+        });
+      }
     });
 
     return NextResponse.json({
       success: true,
       result: {
         score: totalScore,
-        targetScore: attempt.package.targetScore,
+        targetScore: pkg.targetScore,
         correctCount,
         wrongCount,
         totalQuestions: questionIds.length,
         timeTakenSeconds,
         bonusAwarded,
-        bonusAmount,
+        rewardAmount,
+        bonusAmount: rewardAmount,
       },
     });
   } catch (error: any) {

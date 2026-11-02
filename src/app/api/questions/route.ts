@@ -16,7 +16,12 @@ export async function GET(req: NextRequest) {
 
     const where: any = {};
     if (bookId) where.bookId = bookId;
-    if (status) where.status = status;
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { not: "ARCHIVED" };
+    }
+
     if (search) {
       where.OR = [
         { questionBn: { contains: search, mode: "insensitive" } },
@@ -34,6 +39,9 @@ export async function GET(req: NextRequest) {
             nameEn: true,
             subject: true,
           },
+        },
+        _count: {
+          select: { quizAnswers: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -54,6 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     const {
+      id,
       bookId,
       questionBn,
       questionEn,
@@ -65,41 +74,68 @@ export async function POST(req: NextRequest) {
       explanationBn,
       explanationEn,
       difficulty,
+      marks = 1.0,
+      negativeMarks = 0.25,
+      status: reqStatus,
     } = await req.json();
 
     if (!bookId || !questionBn || !optionA || !optionB || !correctOption) {
-      return NextResponse.json({ error: "Book, question text, options and correct answer are required" }, { status: 400 });
+      return NextResponse.json({ error: "বই, প্রশ্ন, অপশন ও সঠিক উত্তর আবশ্যক" }, { status: 400 });
     }
 
-    let status = "PENDING";
+    let status = reqStatus || "PENDING";
     if (session.role === "SUPER_ADMIN" || session.role === "ADMIN_STAFF") {
-      status = "APPROVED";
+      status = reqStatus || "APPROVED";
     }
 
-    const question = await prisma.question.create({
-      data: {
-        bookId,
-        questionBn,
-        questionEn: questionEn || questionBn,
-        optionA,
-        optionB,
-        optionC: optionC || "",
-        optionD: optionD || "",
-        correctOption,
-        difficulty: difficulty || "MEDIUM",
-        explanationBn: explanationBn || "",
-        explanationEn: explanationEn || "",
-        createdByUserId: session.userId,
-        status, // Pending until admin approves (Acceptance test 18)
-      },
-      include: {
-        book: true,
-      },
-    });
+    let question;
+    if (id) {
+      question = await prisma.question.update({
+        where: { id },
+        data: {
+          bookId,
+          questionBn,
+          questionEn: questionEn || questionBn,
+          optionA,
+          optionB,
+          optionC: optionC || "",
+          optionD: optionD || "",
+          correctOption,
+          difficulty: difficulty || "MEDIUM",
+          marks: Number(marks) || 1.0,
+          negativeMarks: Number(negativeMarks) || 0.0,
+          explanationBn: explanationBn || "",
+          explanationEn: explanationEn || "",
+          status,
+        },
+        include: { book: true },
+      });
+    } else {
+      question = await prisma.question.create({
+        data: {
+          bookId,
+          questionBn,
+          questionEn: questionEn || questionBn,
+          optionA,
+          optionB,
+          optionC: optionC || "",
+          optionD: optionD || "",
+          correctOption,
+          difficulty: difficulty || "MEDIUM",
+          marks: Number(marks) || 1.0,
+          negativeMarks: Number(negativeMarks) || 0.0,
+          explanationBn: explanationBn || "",
+          explanationEn: explanationEn || "",
+          createdByUserId: session.userId,
+          status,
+        },
+        include: { book: true },
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      message: status === "PENDING" ? "Question submitted for Admin approval." : "Question created & approved.",
+      message: status === "PENDING" ? "প্রশ্নটি পর্যালোচনার জন্য জমা হয়েছে।" : "প্রশ্ন সংরক্ষিত হয়েছে।",
       question,
     });
   } catch (error: any) {
@@ -112,20 +148,43 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session || (session.role !== "SUPER_ADMIN" && session.role !== "ADMIN_STAFF")) {
-      return NextResponse.json({ error: "Only admins can approve questions" }, { status: 403 });
+      return NextResponse.json({ error: "Only admins can edit/approve questions" }, { status: 403 });
     }
 
-    const { questionId, status } = await req.json(); // "APPROVED" or "REJECTED"
+    const body = await req.json();
+    const { questionId, id, ...updates } = body;
+    const targetId = questionId || id;
+
+    if (!targetId) {
+      return NextResponse.json({ error: "Question ID required" }, { status: 400 });
+    }
+
+    const data: any = {};
+    if (updates.status !== undefined) data.status = updates.status;
+    if (updates.questionBn !== undefined) data.questionBn = updates.questionBn;
+    if (updates.questionEn !== undefined) data.questionEn = updates.questionEn;
+    if (updates.optionA !== undefined) data.optionA = updates.optionA;
+    if (updates.optionB !== undefined) data.optionB = updates.optionB;
+    if (updates.optionC !== undefined) data.optionC = updates.optionC;
+    if (updates.optionD !== undefined) data.optionD = updates.optionD;
+    if (updates.correctOption !== undefined) data.correctOption = updates.correctOption;
+    if (updates.difficulty !== undefined) data.difficulty = updates.difficulty;
+    if (updates.marks !== undefined) data.marks = Number(updates.marks);
+    if (updates.negativeMarks !== undefined) data.negativeMarks = Number(updates.negativeMarks);
+    if (updates.explanationBn !== undefined) data.explanationBn = updates.explanationBn;
+    if (updates.explanationEn !== undefined) data.explanationEn = updates.explanationEn;
+    if (updates.bookId !== undefined) data.bookId = updates.bookId;
 
     const updated = await prisma.question.update({
-      where: { id: questionId },
-      data: { status },
+      where: { id: targetId },
+      data,
+      include: { book: true },
     });
 
     return NextResponse.json({ success: true, question: updated });
   } catch (error: any) {
-    console.error("Approve question error:", error);
-    return NextResponse.json({ error: error.message || "Failed to approve question" }, { status: 500 });
+    console.error("Update question error:", error);
+    return NextResponse.json({ error: error.message || "Failed to update question" }, { status: 500 });
   }
 }
 
@@ -149,11 +208,31 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Question ID required" }, { status: 400 });
     }
 
-    await prisma.question.delete({
-      where: { id },
+    // Safe delete: check if question has user answers
+    const answersCount = await prisma.quizAnswer.count({
+      where: { questionId: id },
     });
 
-    return NextResponse.json({ success: true, message: "Question deleted" });
+    if (answersCount > 0) {
+      // Archive question so past attempts remain intact
+      await prisma.question.update({
+        where: { id },
+        data: { status: "ARCHIVED" },
+      });
+
+      return NextResponse.json({
+        success: true,
+        archived: true,
+        message: `প্রশ্নটিতে ${answersCount} টি উত্তরের রেকর্ড থাকায় এটি আর্কাইভ করা হয়েছে।`,
+      });
+    } else {
+      // Hard delete
+      await prisma.question.delete({
+        where: { id },
+      });
+
+      return NextResponse.json({ success: true, archived: false, message: "প্রশ্নটি সম্পূর্ণ মুছে ফেলা হয়েছে।" });
+    }
   } catch (error: any) {
     console.error("Delete question error:", error);
     return NextResponse.json({ error: error.message || "Failed to delete question" }, { status: 500 });

@@ -209,37 +209,18 @@ export default function QuizPage() {
 
       if (res.ok) {
         setQuizResult({
-          score: data.attempt?.score ?? 0,
-          total: data.attempt?.totalQuestions ?? quizQuestions.length,
-          bonusAwarded: Boolean(data.bonusAwarded),
-          bonusAmount: data.bonusAmount ?? currentPackage?.bonusAmount ?? 0,
+          score: data.result?.score ?? 0,
+          total: data.result?.totalQuestions ?? quizQuestions.length,
+          bonusAwarded: Boolean(data.result?.bonusAwarded),
+          bonusAmount: data.result?.rewardAmount ?? data.result?.bonusAmount ?? currentPackage?.bonusAmount ?? 0,
         });
         // Refresh wallet
         fetchPackagesAndStatus();
       } else {
-        // Fallback evaluation
-        let correct = 0;
-        quizQuestions.forEach((q, idx) => {
-          if (idx === 0 && selectedAnswers[q.id] === "B") correct++;
-          if (idx === 1 && selectedAnswers[q.id] === "A") correct++;
-          if (idx === 2 && selectedAnswers[q.id] === "A") correct++;
-          if (idx === 3 && selectedAnswers[q.id] === "A") correct++;
-        });
-        const target = currentPackage?.targetScore || 3;
-        setQuizResult({
-          score: correct,
-          total: quizQuestions.length,
-          bonusAwarded: correct >= target,
-          bonusAmount: currentPackage?.bonusAmount || 100,
-        });
+        setActionMsg({ text: data.error || "Failed to submit quiz", error: true });
       }
     } catch {
-      setQuizResult({
-        score: Object.keys(selectedAnswers).length,
-        total: quizQuestions.length,
-        bonusAwarded: false,
-        bonusAmount: 0,
-      });
+      setActionMsg({ text: "Server error submitting quiz", error: true });
     } finally {
       setIsSubmitting(false);
     }
@@ -341,8 +322,8 @@ export default function QuizPage() {
               </h2>
               <p className="text-xs text-gray-500">
                 {language === "bn"
-                  ? `টার্গেট স্কোর: ${currentPackage?.targetScore || 8} (বোনাস: ৳ ${currentPackage?.bonusAmount || 100})`
-                  : `Target Score: ${currentPackage?.targetScore || 8} (Bonus: ৳ ${currentPackage?.bonusAmount || 100})`}
+                  ? `টার্গেট স্কোর: ${currentPackage?.targetScore} (পুরস্কার: ৳ ${currentPackage?.bonusAmount})`
+                  : `Target Score: ${currentPackage?.targetScore} (Reward: ৳ ${currentPackage?.bonusAmount})`}
               </p>
             </div>
 
@@ -504,13 +485,13 @@ export default function QuizPage() {
                     <div className="flex items-center justify-between">
                       <span>{language === "bn" ? "প্রশ্নসংখ্যা:" : "Questions:"}</span>
                       <span className="font-bold text-gray-900">
-                        {pkg.questionCount || 10} {language === "bn" ? "টি" : "items"}
+                        {pkg.questionCount} {language === "bn" ? "টি" : "items"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>{language === "bn" ? "সময়সীমা:" : "Time Limit:"}</span>
                       <span className="font-bold text-gray-900">
-                        {pkg.timeLimitMinutes || 10} {language === "bn" ? "মিনিট" : "Mins"}
+                        {pkg.timeLimitMinutes} {language === "bn" ? "মিনিট" : "Mins"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">

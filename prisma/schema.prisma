@@ -145,6 +145,7 @@ model Agent {
   isDefault        Boolean  @default(false) @map("is_default")
   commissionRate   Float    @default(10.0) @map("commission_rate")
   commissionActive Boolean  @default(true) @map("commission_active")
+  cashInActive     Boolean  @default(true) @map("cash_in_active")
   status           String   @default("ACTIVE")
   createdAt        DateTime @default(now()) @map("created_at")
 
@@ -295,13 +296,16 @@ model InstitutionStaff {
 }
 
 model JobCategory {
-  id     String     @id @default(uuid())
-  nameBn String     @map("name_bn")
-  nameEn String     @map("name_en")
-  icon   String?
-  slug   String     @unique
-  jobs   Job[]
-  alerts JobAlert[]
+  id          String     @id @default(uuid())
+  nameBn      String     @map("name_bn")
+  nameEn      String     @map("name_en")
+  icon        String?
+  slug        String     @unique
+  description String?
+  order       Int        @default(0)
+  isActive    Boolean    @default(true) @map("is_active")
+  jobs        Job[]
+  alerts      JobAlert[]
 
   @@map("job_categories")
 }
@@ -351,6 +355,7 @@ model JobApplication {
   jobId           String   @map("job_id")
   customerId      String   @map("customer_id")
   profileSnapshot String   @map("profile_snapshot") // JSON snapshot at apply time
+  feePaid         Float    @default(0.0) @map("fee_paid")
   status          String   @default("APPLIED")     // APPLIED, VIEWED, SHORTLISTED, INTERVIEW_CALLED, SELECTED, REJECTED
   appliedAt       DateTime @default(now()) @map("applied_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
@@ -593,6 +598,8 @@ model QuizPackage {
   id               String   @id @default(uuid())
   nameBn           String   @map("name_bn")
   nameEn           String   @map("name_en")
+  descriptionBn    String?  @map("description_bn")
+  descriptionEn    String?  @map("description_en")
   bookId           String   @map("book_id")
   questionCount    Int      @default(10) @map("question_count")
   timeLimitMinutes Int      @default(10) @map("time_limit_minutes")
@@ -600,6 +607,8 @@ model QuizPackage {
   attemptsAllowed  Int      @default(1) @map("attempts_allowed")
   targetScore      Float    @map("target_score")
   bonusAmount      Float    @map("bonus_amount")
+  rewardEnabled    Boolean  @default(true) @map("reward_enabled")
+  perPointRate     Float    @default(0.0) @map("per_point_rate")
   status           String   @default("ACTIVE")
   createdAt        DateTime @default(now()) @map("created_at")
 

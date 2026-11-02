@@ -105,20 +105,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If target agent wasn't given via refCode, look for an Agent in the selected district first
-    if (!targetAgent && districtId) {
-      const districtAgent = await prisma.agent.findFirst({
-        where: { districtId: Number(districtId) },
-      });
-      if (districtAgent) {
-        targetAgent = districtAgent;
-      }
-    }
-
+    // If target agent wasn't given via refCode, use Admin-configured Default Agent (Acceptance test 12)
     if (!targetAgent) {
-      // Find Default Agent
       targetAgent = await prisma.agent.findFirst({
         where: { isDefault: true },
+      });
+    }
+
+    if (!targetAgent && districtId) {
+      targetAgent = await prisma.agent.findFirst({
+        where: { districtId: Number(districtId) },
       });
     }
 

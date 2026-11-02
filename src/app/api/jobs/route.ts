@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
 type JobType = "FULL_TIME" | "PART_TIME" | "CONTRACTUAL" | "INTERNSHIP";
-type JobStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "EXPIRED" | "CLOSED";
+type JobStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "EXPIRED" | "CLOSED" | "ARCHIVED";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,14 +12,19 @@ export async function GET(req: NextRequest) {
     const categoryId = searchParams.get("categoryId") || searchParams.get("category") || "";
     const districtId = searchParams.get("districtId") || searchParams.get("district") ? Number(searchParams.get("districtId") || searchParams.get("district")) : undefined;
     const jobType = searchParams.get("jobType") as JobType | undefined;
-    const status = (searchParams.get("status") as JobStatus) || "PUBLISHED";
+    const statusParam = searchParams.get("status");
+    const status = (statusParam as JobStatus) || "PUBLISHED";
     const sort = searchParams.get("sort");
 
-    const whereClause: any = {
-      status,
-    };
+    const whereClause: any = {};
 
-    if (status === "PUBLISHED") {
+    if (statusParam === "ALL") {
+      whereClause.status = { not: "ARCHIVED" };
+    } else {
+      whereClause.status = status;
+    }
+
+    if (status === "PUBLISHED" && statusParam !== "ALL") {
       whereClause.deadline = { gte: new Date() };
     }
 
@@ -115,13 +120,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Institution profile not found" }, { status: 404 });
       }
       institutionId = inst.id;
-      // Institution posts require Admin approval (Pending)
       status = "PENDING";
     } else if (session.role === "SUPER_ADMIN" || session.role === "ADMIN_STAFF") {
       postedByAdmin = true;
-      status = "PUBLISHED";
+      status = body.status || "PUBLISHED";
     } else {
       return NextResponse.json({ error: "Forbidden: Not allowed to post jobs" }, { status: 403 });
+    }
+
+    if (!titleBn || !organizationName || !categoryId) {
+      return NextResponse.json(
+        { error: "পদের নাম (বাংলা), প্রতিষ্ঠানের নাম এবং ক্যাটাগরি আবশ্যক" },
+        { status: 400 }
+      );
     }
 
     const job = await prisma.job.create({
@@ -130,24 +141,24 @@ export async function POST(req: NextRequest) {
         titleEn: titleEn || titleBn,
         organizationName,
         logoUrl: logoUrl || null,
-        applicationFee: applicationFee ? Number(applicationFee) : 0.0,
+        applicationFee: Math.max(0, Number(applicationFee) || 0),
         categoryId,
         jobType: jobType || "FULL_TIME",
         workplaceDistrictId: workplaceDistrictId ? Number(workplaceDistrictId) : null,
-        workplaceLocation,
-        vacancy: vacancy ? Number(vacancy) : 1,
-        salaryRange: salaryRange || "Negotiable",
-        educationReq,
-        experienceReq,
-        ageLimit: ageLimit || null,
-        responsibilities: responsibilities || null,
-        otherReqs: otherReqs || null,
-        descriptionBn,
-        descriptionEn: descriptionEn || descriptionBn,
-        deadline: new Date(deadline),
-        status,
-        institutionId,
+        workplaceLocation: workplaceLocation || "",
+        vacancy: Math.max(1, Number(vacancy) || 1),
+        salaryRange: salaryRange || "আলোচনা সাপেক্ষে",
+        educationReq: educationReq || "",
+        experienceReq: experienceReq || "",
+        ageLimit: ageLimit || "",
+        responsibilities: responsibilities || "",
+        otherReqs: otherReqs || "",
+        descriptionBn: descriptionBn || "",
+        descriptionEn: descriptionEn || "",
+        deadline: deadline ? new Date(deadline) : new Date(Date.now() + 15 * 86400000),
         postedByAdmin,
+        institutionId,
+        status,
       },
     });
 

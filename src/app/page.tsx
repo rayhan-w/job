@@ -51,6 +51,11 @@ export default function HomePage() {
   const { language, t } = useLanguage();
   const [jobs, setJobs] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({
+    contentHeroTitle: "",
+    contentHeroSubtitle: "",
+    contentHowItWorks: "",
+  });
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
@@ -69,6 +74,13 @@ export default function HomePage() {
       .then((data) => {
         if (data.categories) setCategories(data.categories);
       });
+
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.settings) setSettings(data.settings);
+      })
+      .catch(() => {});
   }, []);
 
   const handleApply = async (jobId: string) => {
@@ -117,12 +129,15 @@ export default function HomePage() {
           <div className="border-b border-gray-100 pb-3">
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
               <Search className="w-5 h-5 text-orange-600" />
-              <span>{language === "bn" ? "চাকরি খুঁজুন" : "Search Jobs"}</span>
+              <span>
+                {settings.contentHeroTitle || (language === "bn" ? "চাকরি খুঁজুন" : "Search Jobs")}
+              </span>
             </h1>
             <p className="text-xs text-gray-500 mt-0.5">
-              {language === "bn"
-                ? "পদবী, প্রতিষ্ঠান, ক্যাটাগরি বা জেলা দিয়ে সহজে সরকারি, বেসরকারি, কৃষি ও মৎস্য চাকরি খুঁজুন"
-                : "Find circulars across Government, Private, Agriculture & Fisheries sectors"}
+              {settings.contentHeroSubtitle ||
+                (language === "bn"
+                  ? "পদবী, প্রতিষ্ঠান, ক্যাটাগরি বা জেলা দিয়ে সহজে সরকারি, বেসরকারি, কৃষি ও মৎস্য চাকরি খুঁজুন"
+                  : "Find circulars across Government, Private, Agriculture & Fisheries sectors")}
             </p>
           </div>
 
@@ -496,9 +511,10 @@ export default function HomePage() {
                   {language === "bn" ? "১ ক্লিকে সরাসরি আবেদন" : "Direct Apply in 1 Click"}
                 </h3>
                 <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                  {language === "bn"
-                    ? "একবার প্রোফাইল সংরক্ষণ করুন, এরপর যেকোনো চাকরির বিজ্ঞপ্তিতে আবেদন হবে মাত্র ১ ক্লিকে।"
-                    : "Save your portfolio once, and apply to verified opportunities across Bangladesh in just 1 click."}
+                  {settings.contentHowItWorks ||
+                    (language === "bn"
+                      ? "একবার প্রোফাইল সংরক্ষণ করুন, এরপর যেকোনো চাকরির বিজ্ঞপ্তিতে আবেদন হবে মাত্র ১ ক্লিকে।"
+                      : "Save your portfolio once, and apply to verified opportunities across Bangladesh in just 1 click.")}
                 </p>
               </div>
             </div>

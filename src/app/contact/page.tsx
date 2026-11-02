@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/components/LanguageContext";
 import { Phone, Mail, MapPin, Send, CheckCircle2 } from "lucide-react";
 
@@ -8,6 +8,23 @@ export default function ContactPage() {
   const { language } = useLanguage();
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: "", phone: "", message: "" });
+  const [settings, setSettings] = useState<any>({
+    hotline: "09600-000000",
+    supportEmail: "support@jobportal.bd",
+    officeAddress: "গুলশান-১, ঢাকা, বাংলাদেশ",
+    contentContact: "যেকোনো জিজ্ঞাসা, সহায়তা বা অভিযোগের জন্য আমাদের হেল্পডেস্কে মেসেজ পাঠান।",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.settings) {
+          setSettings((prev: any) => ({ ...prev, ...data.settings }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,9 +41,10 @@ export default function ContactPage() {
           {language === "bn" ? "আমাদের সাথে যোগাযোগ করুন" : "Get In Touch With Us"}
         </h1>
         <p className="text-gray-500 text-sm max-w-lg mx-auto">
-          {language === "bn"
-            ? "যেকোনো জিজ্ঞাসা, সহায়তা বা অভিযোগের জন্য আমাদের হেল্পডেস্কে মেসেজ পাঠান।"
-            : "Have a query or need technical assistance? Our support team is here to help."}
+          {settings.contentContact ||
+            (language === "bn"
+              ? "যেকোনো জিজ্ঞাসা, সহায়তা বা অভিযোগের জন্য আমাদের হেল্পডেস্কে মেসেজ পাঠান।"
+              : "Have a query or need technical assistance? Our support team is here to help.")}
         </p>
       </div>
 
@@ -44,7 +62,11 @@ export default function ContactPage() {
               </div>
               <div>
                 <div className="font-bold text-gray-900">{language === "bn" ? "হটলাইন নম্বর" : "Hotline"}</div>
-                <div className="text-xs text-gray-500 mt-0.5">09600-000000, 01700-000000</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  <a href={`tel:${settings.hotline}`} className="hover:text-orange-600 transition">
+                    {settings.hotline}
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -54,7 +76,11 @@ export default function ContactPage() {
               </div>
               <div>
                 <div className="font-bold text-gray-900">{language === "bn" ? "ইমেইল সাপোর্ট" : "Email Support"}</div>
-                <div className="text-xs text-gray-500 mt-0.5">support@jobportal.bd</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  <a href={`mailto:${settings.supportEmail}`} className="hover:text-blue-600 transition">
+                    {settings.supportEmail}
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -65,7 +91,7 @@ export default function ContactPage() {
               <div>
                 <div className="font-bold text-gray-900">{language === "bn" ? "অফিসের ঠিকানা" : "Main Office"}</div>
                 <div className="text-xs text-gray-500 mt-0.5">
-                  {language === "bn" ? "গুলশান-১, ঢাকা-১২১২, বাংলাদেশ" : "Gulshan-1, Dhaka-1212, Bangladesh"}
+                  {settings.officeAddress}
                 </div>
               </div>
             </div>
@@ -98,13 +124,13 @@ export default function ContactPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
-                  placeholder={language === "bn" ? "উদা: রাহাতুল ইসলাম" : "e.g. Rahatul Islam"}
+                  placeholder={language === "bn" ? "নাম লিখুন" : "Enter your name"}
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  {language === "bn" ? "মোবাইল নম্বর" : "Phone Number"}
+                  {language === "bn" ? "ফোন নম্বর" : "Phone Number"}
                 </label>
                 <input
                   type="tel"
@@ -112,13 +138,13 @@ export default function ContactPage() {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
-                  placeholder="017XXXXXXXX"
+                  placeholder="01XXXXXXXXX"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  {language === "bn" ? "বার্তা / মন্তব্য" : "Your Message"}
+                  {language === "bn" ? "আপনার বার্তা" : "Your Message"}
                 </label>
                 <textarea
                   rows={4}
@@ -126,13 +152,13 @@ export default function ContactPage() {
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
-                  placeholder={language === "bn" ? "আপনার মেসেজ লিখুন..." : "Write your query here..."}
+                  placeholder={language === "bn" ? "কী বিষয়ে সহায়তা প্রয়োজন..." : "How can we assist you..."}
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2"
+                className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{language === "bn" ? "বার্তা পাঠান" : "Send Message"}</span>

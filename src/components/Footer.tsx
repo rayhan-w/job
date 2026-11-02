@@ -1,12 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "./LanguageContext";
 import { Globe } from "lucide-react";
 
 export function Footer() {
   const { language, setLanguage } = useLanguage();
+  const [settings, setSettings] = useState<any>({
+    siteName: "WOJOB",
+    hotline: "09600-000000",
+    supportEmail: "support@jobportal.bd",
+    officeAddress: "গুলশান-১, ঢাকা, বাংলাদেশ",
+    contentIntro: "বাংলাদেশের সরকারি, বেসরকারি, কৃষি ও মৎস্য সেক্টরের চাকরির সর্বাধুনিক পোর্টাল। একবার প্রোফাইল বানান, ১ ক্লিকে আবেদন করুন।",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.settings) {
+          setSettings((prev: any) => ({ ...prev, ...data.settings }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <footer className="bg-slate-900 text-gray-400 py-12 border-t border-slate-800">
@@ -18,14 +36,14 @@ export function Footer() {
               W
             </div>
             <span className="font-extrabold text-xl tracking-tight text-white">
-              WO<span className="text-orange-500">JOB</span>
+              {settings.siteName || "WOJOB"}
             </span>
             <span className="text-xs text-gray-500 ml-2 hidden md:inline">
               | {language === "bn" ? "ক্যারিয়ার পোর্টাল বাংলাদেশ" : "Career Portal Bangladesh"}
             </span>
           </div>
 
-          {/* Language Switcher moved down to footer area as requested */}
+          {/* Language Switcher */}
           <div className="flex items-center gap-3 bg-slate-800/90 border border-slate-700/80 px-4 py-2 rounded-full shadow-sm">
             <div className="flex items-center gap-1.5 text-xs text-gray-300 font-bold">
               <Globe className="w-4 h-4 text-orange-400" />
@@ -63,9 +81,10 @@ export function Footer() {
               {language === "bn" ? "প্ল্যাটফর্ম পরিচিতি" : "About Platform"}
             </h4>
             <p className="text-sm text-gray-400 leading-relaxed">
-              {language === "bn"
-                ? "বাংলাদেশের সরকারি, বেসরকারি, কৃষি ও মৎস্য সেক্টরের চাকরির সর্বাধুনিক পোর্টাল। একবার প্রোফাইল বানান, ১ ক্লিকে আবেদন করুন।"
-                : "Modern portal for Government, Private, Agriculture, and Fisheries jobs in Bangladesh. Build your portfolio once, apply in 1-click."}
+              {settings.contentIntro ||
+                (language === "bn"
+                  ? "বাংলাদেশের সরকারি, বেসরকারি, কৃষি ও মৎস্য সেক্টরের চাকরির সর্বাধুনিক পোর্টাল। একবার প্রোফাইল বানান, ১ ক্লিকে আবেদন করুন।"
+                  : "Modern portal for Government, Private, Agriculture, and Fisheries jobs in Bangladesh. Build your portfolio once, apply in 1-click.")}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-400">
               <Link href="/about" className="hover:text-orange-400 underline underline-offset-4">
@@ -152,14 +171,20 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <span className="text-gray-300">{language === "bn" ? "হটলাইন:" : "Hotline:"}</span> 09600-000000
+                <span className="text-gray-300">{language === "bn" ? "হটলাইন:" : "Hotline:"}</span>{" "}
+                <a href={`tel:${settings.hotline}`} className="hover:text-orange-400 transition">
+                  {settings.hotline}
+                </a>
               </li>
               <li>
-                <span className="text-gray-300">{language === "bn" ? "ইমেইল:" : "Email:"}</span> support@jobportal.bd
+                <span className="text-gray-300">{language === "bn" ? "ইমেইল:" : "Email:"}</span>{" "}
+                <a href={`mailto:${settings.supportEmail}`} className="hover:text-orange-400 transition">
+                  {settings.supportEmail}
+                </a>
               </li>
               <li>
                 <span className="text-gray-300">{language === "bn" ? "ঠিকানা:" : "Address:"}</span>{" "}
-                {language === "bn" ? "গুলশান-১, ঢাকা, বাংলাদেশ" : "Gulshan-1, Dhaka, Bangladesh"}
+                <span>{settings.officeAddress}</span>
               </li>
             </ul>
           </div>
@@ -167,7 +192,7 @@ export function Footer() {
 
         {/* Bottom copyright */}
         <div className="pt-8 border-t border-slate-800 text-center text-xs text-gray-500">
-          © 2026 WOJOB. {language === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+          © 2026 {settings.siteName || "WOJOB"}. {language === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
         </div>
       </div>
     </footer>

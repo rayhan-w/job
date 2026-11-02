@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendTemplatedSms } from "@/lib/sms";
-import { debitWallet } from "@/lib/wallet";
 
 export async function POST(
   req: NextRequest,
@@ -29,6 +28,7 @@ export async function POST(
             experiences: true,
             skills: true,
             cvFile: true,
+            wallet: true,
           },
         },
       },
@@ -38,7 +38,7 @@ export async function POST(
       return NextResponse.json({ error: "Candidate account not found" }, { status: 404 });
     }
 
-    // Check minimum profile requirements (photo or phone, and at least 1 education)
+    // Check minimum profile requirements (phone, and at least 1 education)
     const profile = customer.user.candidateProfile;
     const educations = customer.user.educations;
 
@@ -65,6 +65,13 @@ export async function POST(
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
+    if (job.status === "ARCHIVED") {
+      return NextResponse.json(
+        { error: "This job circular has been archived and is no longer accepting applications." },
+        { status: 400 }
+      );
+    }
+
     if (new Date(job.deadline) < new Date()) {
       return NextResponse.json(
         { error: "This job circular has expired. Deadline has passed." },
@@ -72,7 +79,7 @@ export async function POST(
       );
     }
 
-    // Check if already applied (Acceptance test 7)
+    // Idempotency check: Already applied check
     const alreadyApplied = await prisma.jobApplication.findUnique({
       where: {
         jobId_customerId: {
@@ -84,32 +91,31 @@ export async function POST(
 
     if (alreadyApplied) {
       return NextResponse.json(
-        { error: "Already applied to this job." },
+        { error: "Already applied to this job.", alreadyApplied: true },
         { status: 409 }
       );
     }
 
-    // Check application fee & wallet balance
-    const fee = job.applicationFee || 0;
-    if (fee > 0) {
-      const wallet = await prisma.wallet.findUnique({
-        where: { userId: session.userId },
-      });
-      const currentBal = wallet?.balance || 0;
-      if (currentBal < fee) {
-        return NextResponse.json(
-          {
-            error: `আবেদনের জন্য ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। আবেদন ফি ৳${fee}, আপনার বর্তমান ব্যালেন্স ৳${currentBal}। অনুগ্রহ করে ওয়ালেট ক্যাশ-ইন করুন।`,
-            insufficientBalance: true,
-            requiredFee: fee,
-            currentBalance: currentBal,
-          },
-          { status: 400 }
-        );
-      }
+    // Application fee checking
+    const fee = Math.max(0, job.applicationFee || 0);
+    const wallet = customer.user.wallet;
+    const currentBal = wallet?.balance || 0;
+
+    if (fee > 0 && currentBal < fee) {
+      const shortfall = fee - currentBal;
+      return NextResponse.json(
+        {
+          error: `আবেদনের জন্য ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। আবেদন ফি ৳${fee}, আপনার বর্তমান ব্যালেন্স ৳${currentBal} (ঘাটতি ৳${shortfall})। অনুগ্রহ করে ওয়ালেট ক্যাশ-ইন করুন।`,
+          insufficientBalance: true,
+          requiredFee: fee,
+          currentBalance: currentBal,
+          shortfall,
+        },
+        { status: 400 }
+      );
     }
 
-    // Take snapshot of profile at apply time (Section 6.3 & v8)
+    // Prepare profile snapshot
     const chosenCvType = profile?.preferredCvType || "ONLINE";
     let parsedDocs = null;
     let parsedRefs = null;
@@ -134,54 +140,94 @@ export async function POST(
       appliedDate: new Date().toISOString(),
     });
 
-    // Save Application with profile snapshot
-    const application = await prisma.jobApplication.create({
-      data: {
-        jobId,
-        customerId: customer.id,
-        profileSnapshot,
-        status: "APPLIED",
-      },
-    });
-
-    // Deduct application fee from wallet if fee > 0
-    if (fee > 0) {
-      await debitWallet({
-        userId: customer.user.id,
-        amount: fee,
-        type: "PURCHASE",
-        referenceType: "JOB_APPLICATION",
-        referenceId: application.id,
-        note: `চাকরিতে আবেদন ফি কর্তন: ${job.titleBn} (${job.organizationName})`,
+    // ATOMIC TRANSACTION: Create application + Deduct fee + Create ledger entry
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create Job Application
+      const app = await tx.jobApplication.create({
+        data: {
+          jobId,
+          customerId: customer.id,
+          profileSnapshot,
+          feePaid: fee,
+          status: "APPLIED",
+        },
       });
-    }
 
-    // Create in-app notification for candidate
-    await prisma.notification.create({
-      data: {
-        userId: customer.user.id,
-        titleBn: "আবেদন সফল হয়েছে",
-        titleEn: "Application Submitted Successfully",
-        messageBn: `${job.organizationName}-এ '${job.titleBn}' পদের জন্য আপনার আবেদনটি গৃহীত হয়েছে।`,
-        messageEn: `Your application for '${job.titleEn}' at ${job.organizationName} has been submitted.`,
-        link: `/dashboard/applications`,
-      },
+      // 2. If fee > 0, deduct wallet balance and create APPLICATION_FEE ledger entry
+      if (fee > 0) {
+        if (!wallet) {
+          throw new Error("Wallet not found for candidate");
+        }
+
+        const updatedWallet = await tx.wallet.update({
+          where: { id: wallet.id },
+          data: {
+            balance: { decrement: fee },
+          },
+        });
+
+        if (updatedWallet.balance < 0) {
+          throw new Error("Insufficient wallet balance during atomic execution");
+        }
+
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: "APPLICATION_FEE",
+            amount: -fee,
+            balanceAfter: updatedWallet.balance,
+            referenceType: "JOB_APPLICATION",
+            referenceId: app.id,
+            note: `চাকরিতে আবেদন ফি কর্তন: ${job.titleBn} (${job.organizationName})`,
+            createdBy: "SYSTEM",
+          },
+        });
+      }
+
+      // 3. Create Notification
+      await tx.notification.create({
+        data: {
+          userId: customer.user.id,
+          titleBn: "আবেদন সফল হয়েছে",
+          titleEn: "Application Submitted Successfully",
+          messageBn: `${job.organizationName}-এ '${job.titleBn}' পদের জন্য আবেদন সফল হয়েছে।${
+            fee > 0 ? ` ওয়ালেট থেকে আবেদন ফি ৳${fee} কর্তন করা হয়েছে।` : ""
+          }`,
+          messageEn: `Application for '${job.titleEn}' at ${job.organizationName} submitted.${
+            fee > 0 ? ` ৳${fee} application fee deducted from wallet.` : ""
+          }`,
+          link: "/dashboard/applications",
+        },
+      });
+
+      return app;
     });
 
-    // Send sandbox SMS confirmation
-    await sendTemplatedSms("APPLICATION_STATUS", customer.user.phone, {
-      name: customer.user.name,
-      organization: job.organizationName,
-      status: "Applied",
-    });
+    // Send sandbox SMS confirmation (outside tx)
+    try {
+      await sendTemplatedSms("APPLICATION_STATUS", customer.user.phone, {
+        name: customer.user.name,
+        organization: job.organizationName,
+        status: "Applied",
+      });
+    } catch {}
 
     return NextResponse.json({
       success: true,
       message: "Applied successfully in 1-click!",
-      applicationId: application.id,
+      applicationId: result.id,
+      feePaid: fee,
+      newBalance: fee > 0 ? currentBal - fee : currentBal,
     });
   } catch (error: any) {
     console.error("Apply job error:", error);
+    if (error.code === "P2002") {
+      // Prisma unique constraint violation (concurrent double-click protection)
+      return NextResponse.json(
+        { error: "Already applied to this job. Cannot apply twice.", alreadyApplied: true },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: error.message || "Failed to apply" }, { status: 500 });
   }
 }
