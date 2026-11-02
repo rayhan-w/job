@@ -115,6 +115,16 @@ export function DashboardSidebar({ userRole = "CUSTOMER" }: { userRole?: string 
             );
           })}
 
+          {(userRole === "AGENT" || userRole === "SUPER_ADMIN") && (
+            <Link
+              href="/agent"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition mt-2"
+            >
+              <Building2 className="w-4 h-4 text-orange-400" />
+              <span>{language === "bn" ? "এজেন্ট প্যানেল" : "Agent Panel"}</span>
+            </Link>
+          )}
+
           {userRole === "SUPER_ADMIN" && (
             <Link
               href="/admin"

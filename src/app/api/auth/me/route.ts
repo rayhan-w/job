@@ -18,6 +18,9 @@ export async function GET() {
       },
       customer: {
         include: {
+          channelPartner: {
+            include: { user: true, district: true },
+          },
           agent: {
             include: {
               user: true,

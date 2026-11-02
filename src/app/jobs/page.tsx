@@ -206,12 +206,17 @@ function JobsContent() {
             return (
               <div
                 key={job.id}
-                className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                onClick={() => router.push(`/jobs/${job.id}`)}
+                className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-xl hover:border-orange-200 transition-all duration-200 flex flex-col justify-between cursor-pointer group"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <div className="w-11 h-11 rounded-2xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold text-lg">
-                      {job.organizationName[0]}
+                    <div className="w-11 h-11 rounded-2xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold text-lg overflow-hidden shrink-0">
+                      {job.logoUrl ? (
+                        <img src={job.logoUrl} alt={job.organizationName} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span>{job.organizationName[0]}</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -233,10 +238,10 @@ function JobsContent() {
                     </div>
                   </div>
 
-                  <h3 className="mt-4 font-black text-gray-900 text-lg line-clamp-1 hover:text-orange-600 transition">
-                    <Link href={`/jobs/${job.id}`}>
+                  <h3 className="mt-4 font-black text-gray-900 text-lg line-clamp-1 group-hover:text-orange-600 transition">
+                    <span className="hover:underline">
                       {language === "bn" ? job.titleBn : job.titleEn || job.titleBn}
-                    </Link>
+                    </span>
                   </h3>
                   <p className="text-xs text-gray-500 font-medium mt-1">
                     {job.organizationName}
@@ -271,12 +276,16 @@ function JobsContent() {
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-gray-100">
-                  <Link
-                    href={`/jobs/${job.id}`}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/jobs/${job.id}`);
+                    }}
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2"
                   >
                     <span>{t("apply_now")}</span>
-                  </Link>
+                  </button>
                 </div>
               </div>
             );

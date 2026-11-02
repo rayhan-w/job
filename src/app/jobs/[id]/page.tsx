@@ -34,6 +34,8 @@ export default function JobDetailPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [profileComplete, setProfileComplete] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [showFeeModal, setShowFeeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [applyMsg, setApplyMsg] = useState<{ text: string; error?: boolean } | null>(null);
@@ -55,6 +57,7 @@ export default function JobDetailPage() {
         setIsLoggedIn(Boolean(data.isLoggedIn));
         setUserRole(data.userRole);
         setProfileComplete(Boolean(data.profileComplete));
+        if (typeof data.walletBalance === "number") setWalletBalance(data.walletBalance);
 
         if (data.isLoggedIn) {
           fetch("/api/saved-jobs")
@@ -99,9 +102,8 @@ export default function JobDetailPage() {
     }
   };
 
-  const handleApply = async () => {
+  const handleApplyClick = () => {
     if (!isLoggedIn) {
-      // Redirect to login with return callback
       router.push(`/login?callbackUrl=/jobs/${jobId}`);
       return;
     }
@@ -117,6 +119,27 @@ export default function JobDetailPage() {
       return;
     }
 
+    if (!profileComplete) {
+      setApplyMsg({
+        text:
+          language === "bn"
+            ? "আপনার প্রোফাইল অসম্পূর্ণ! আবেদন করার পূর্বে ফোন নম্বর ও অন্তত একটি শিক্ষাগত যোগ্যতা যোগ করুন।"
+            : "Incomplete profile: Please add your phone number and at least one education entry before applying.",
+        error: true,
+      });
+      return;
+    }
+
+    if (job?.applicationFee && job.applicationFee > 0) {
+      setShowFeeModal(true);
+      return;
+    }
+
+    executeApply();
+  };
+
+  const executeApply = async () => {
+    setShowFeeModal(false);
     setApplying(true);
     setApplyMsg(null);
 
@@ -128,11 +151,18 @@ export default function JobDetailPage() {
 
       if (res.ok) {
         setHasApplied(true);
+        if (job.applicationFee > 0) {
+          setWalletBalance((prev) => Math.max(0, prev - job.applicationFee));
+        }
         setApplyMsg({
           text:
             language === "bn"
-              ? "অভিনন্দন! আপনার আবেদন সফলভাবে জমা হয়েছে।"
-              : "Congratulations! Your application has been submitted successfully.",
+              ? `অভিনন্দন! আপনার আবেদন সফলভাবে জমা হয়েছে।${
+                  job.applicationFee > 0 ? ` ওয়ালেট থেকে ৳${job.applicationFee} কর্তন করা হয়েছে।` : ""
+                }`
+              : `Congratulations! Your application has been submitted successfully.${
+                  job.applicationFee > 0 ? ` ৳${job.applicationFee} has been deducted from your wallet.` : ""
+                }`,
         });
       } else {
         setApplyMsg({
@@ -216,7 +246,22 @@ export default function JobDetailPage() {
       {/* Main Job Header Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div className="space-y-3">
+          <div className="flex items-start gap-4">
+            {job.logoUrl ? (
+              <img
+                src={job.logoUrl}
+                alt={job.organizationName}
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border border-gray-100 shadow-xs shrink-0"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-xs shrink-0">
+                {job.organizationName ? job.organizationName.charAt(0).toUpperCase() : "W"}
+              </div>
+            )}
+            <div className="space-y-3 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-block bg-orange-50 text-orange-600 text-xs font-bold px-3 py-1 rounded-full border border-orange-200">
                 {categoryName || (language === "bn" ? "চাকরি" : "Job")}
@@ -256,9 +301,10 @@ export default function JobDetailPage() {
               </div>
             </div>
           </div>
+          </div>
 
           {/* Save & Share action buttons */}
-          <div className="flex items-center gap-2 self-start">
+          <div className="flex items-center gap-2 self-start shrink-0">
             <button
               onClick={handleToggleSave}
               disabled={savingBookmark}
@@ -287,7 +333,15 @@ export default function JobDetailPage() {
         </div>
 
         {/* Quick Highlights Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-gray-100">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-gray-100">
+          <div className="bg-gray-50/70 p-3.5 rounded-2xl">
+            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              {language === "bn" ? "আবেদন ফি" : "Application Fee"}
+            </div>
+            <div className="text-sm font-bold text-orange-600 mt-1">
+              {job.applicationFee > 0 ? `৳ ${job.applicationFee}` : (language === "bn" ? "বিনামূল্যে (৳ ০)" : "Free (৳ 0)")}
+            </div>
+          </div>
           <div className="bg-gray-50/70 p-3.5 rounded-2xl">
             <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
               {language === "bn" ? "বেতন স্কেল" : "Salary"}
@@ -360,7 +414,7 @@ export default function JobDetailPage() {
               </button>
             ) : (
               <button
-                onClick={handleApply}
+                onClick={handleApplyClick}
                 disabled={applying}
                 className="w-full sm:w-auto px-7 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/20 transition transform active:scale-95 disabled:opacity-60"
               >
@@ -496,7 +550,7 @@ export default function JobDetailPage() {
             </span>
           ) : (
             <button
-              onClick={handleApply}
+              onClick={handleApplyClick}
               disabled={applying}
               className="px-8 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-sm transition shadow-lg shadow-orange-600/30"
             >
@@ -505,6 +559,98 @@ export default function JobDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Application Fee Confirmation Modal (Item 6b) */}
+      {showFeeModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                ৳
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-gray-900">
+                  {language === "bn" ? "আবেদন ফি কর্তন অনুমোদন" : "Application Fee Confirmation"}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {job.organizationName}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-xs">
+              <div className="flex justify-between items-center text-gray-600">
+                <span>{language === "bn" ? "পদের নাম:" : "Job Title:"}</span>
+                <span className="font-bold text-gray-900 truncate max-w-[200px]">{title}</span>
+              </div>
+              <div className="flex justify-between items-center text-gray-600">
+                <span>{language === "bn" ? "আবেদন ফি:" : "Application Fee:"}</span>
+                <span className="font-extrabold text-orange-600 text-sm">৳ {job.applicationFee}</span>
+              </div>
+              <div className="flex justify-between items-center text-gray-600 pt-2 border-t border-gray-200">
+                <span>{language === "bn" ? "বর্তমান ওয়ালেট ব্যালেন্স:" : "Current Wallet Balance:"}</span>
+                <span className={`font-bold ${walletBalance < job.applicationFee ? "text-red-600" : "text-emerald-700"}`}>
+                  ৳ {walletBalance}
+                </span>
+              </div>
+            </div>
+
+            {walletBalance < job.applicationFee ? (
+              <div className="space-y-4">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 space-y-1">
+                  <p className="font-bold">
+                    {language === "bn" ? "অপর্যাপ্ত ব্যালেন্স!" : "Insufficient Balance!"}
+                  </p>
+                  <p>
+                    {language === "bn"
+                      ? `আবেদনের জন্য আরও ৳ ${(job.applicationFee - walletBalance).toFixed(2)} প্রয়োজন। আবেদন সম্পূর্ণ করতে অনুগ্রহ করে ওয়ালেটে টাকা যোগ (ক্যাশ-ইন) করুন।`
+                      : `You need ৳ ${(job.applicationFee - walletBalance).toFixed(2)} more. Please cash-in to your wallet to complete application.`}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowFeeModal(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50"
+                  >
+                    {language === "bn" ? "বাতিল" : "Cancel"}
+                  </button>
+                  <Link
+                    href="/dashboard/wallet"
+                    className="flex-1 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold text-center flex items-center justify-center"
+                  >
+                    {language === "bn" ? "ক্যাশ-ইন করুন →" : "Cash In →"}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-xs text-gray-600">
+                  {language === "bn"
+                    ? `আবেদন নিশ্চিত করলে আপনার ওয়ালেট ব্যালেন্স থেকে ৳ ${job.applicationFee} কর্তন করা হবে। বাকি ব্যালেন্স থাকবে ৳ ${(walletBalance - job.applicationFee).toFixed(2)}।`
+                    : `Confirming will deduct ৳ ${job.applicationFee} from your wallet. Remaining balance will be ৳ ${(walletBalance - job.applicationFee).toFixed(2)}.`}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowFeeModal(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50"
+                  >
+                    {language === "bn" ? "বাতিল" : "Cancel"}
+                  </button>
+                  <button
+                    onClick={executeApply}
+                    disabled={applying}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-bold shadow-md transition disabled:opacity-50"
+                  >
+                    {applying
+                      ? (language === "bn" ? "জমা হচ্ছে..." : "Processing...")
+                      : (language === "bn" ? "ফি প্রদান ও নিশ্চিত আবেদন" : "Pay & Submit Application")}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

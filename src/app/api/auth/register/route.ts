@@ -7,7 +7,16 @@ import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, password, email, refCode, role = "CUSTOMER", termsAccepted } = await req.json();
+    const {
+      name,
+      phone,
+      password,
+      email,
+      districtId,
+      refCode,
+      role = "CUSTOMER",
+      termsAccepted,
+    } = await req.json();
 
     if (!phone || !password || !name) {
       return NextResponse.json(
@@ -52,6 +61,11 @@ export async function POST(req: NextRequest) {
     let targetAgent = null;
     let referringUserId: string | null = null;
 
+    const pubRefSetting = await prisma.setting.findUnique({
+      where: { key: "PUBLIC_REFERRAL_ENABLED" },
+    });
+    const isPublicReferralEnabled = pubRefSetting ? pubRefSetting.value !== "false" : true;
+
     if (refCode) {
       const cleanRef = String(refCode).trim().toUpperCase();
       // 1. Check if refCode belongs to an Agent
@@ -59,22 +73,45 @@ export async function POST(req: NextRequest) {
         where: { referralCode: cleanRef },
       });
 
-      // 2. Check if refCode belongs to a User
-      const referringUser = await prisma.user.findUnique({
-        where: { referralCode: cleanRef },
-      });
-
-      if (referringUser) {
-        referringUserId = referringUser.id;
-        // If the referring user is under an agent, link same agent
-        const refCustomer = await prisma.customer.findUnique({
-          where: { userId: referringUser.id },
+      // 2. Check if refCode belongs to a User (only if public referral is enabled)
+      if (isPublicReferralEnabled) {
+        const referringUser = await prisma.user.findUnique({
+          where: { referralCode: cleanRef },
         });
-        if (refCustomer && !targetAgent) {
-          targetAgent = await prisma.agent.findUnique({
-            where: { id: refCustomer.agentId },
+
+        if (referringUser) {
+          referringUserId = referringUser.id;
+          // If the referring user is under an agent, link same agent
+          const refCustomer = await prisma.customer.findUnique({
+            where: { userId: referringUser.id },
           });
+          if (refCustomer && !targetAgent) {
+            targetAgent = await prisma.agent.findUnique({
+              where: { id: refCustomer.agentId },
+            });
+          }
         }
+      }
+    }
+
+    // Look up Channel Partner strictly by user's registration district (Item 5a)
+    let channelPartnerId: string | null = null;
+    if (districtId) {
+      const cp = await prisma.channelPartner.findUnique({
+        where: { districtId: Number(districtId) },
+      });
+      if (cp) {
+        channelPartnerId = cp.id;
+      }
+    }
+
+    // If target agent wasn't given via refCode, look for an Agent in the selected district first
+    if (!targetAgent && districtId) {
+      const districtAgent = await prisma.agent.findFirst({
+        where: { districtId: Number(districtId) },
+      });
+      if (districtAgent) {
+        targetAgent = districtAgent;
       }
     }
 
@@ -120,6 +157,7 @@ export async function POST(req: NextRequest) {
             ? {
                 create: {
                   agentId: targetAgent.id,
+                  channelPartnerId: channelPartnerId || null,
                 },
               }
             : undefined,
@@ -135,6 +173,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId: user.id,
           phone: user.phone,
+          districtId: districtId ? Number(districtId) : null,
           completeness: 0,
         },
       });

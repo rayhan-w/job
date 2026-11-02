@@ -31,6 +31,12 @@ export default function WalletPage() {
   const [cashInTrxId, setCashInTrxId] = useState("");
   const [cashInNote, setCashInNote] = useState("");
   const [cashInSubmitting, setCashInSubmitting] = useState(false);
+  const [cashInType, setCashInType] = useState<"AGENT" | "ONLINE">("AGENT");
+  const [agentAmount, setAgentAmount] = useState("");
+  const [agentNote, setAgentNote] = useState("");
+  const [submittingAgentCashIn, setSubmittingAgentCashIn] = useState(false);
+  const [agentMsg, setAgentMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const [agentRequests, setAgentRequests] = useState<any[]>([]);
   const [cashInMsg, setCashInMsg] = useState<{ text: string; error?: boolean } | null>(null);
 
   // Cash out modal/form states
@@ -42,10 +48,11 @@ export default function WalletPage() {
 
   const fetchWalletData = async () => {
     try {
-      const [userRes, txRes, settingsRes] = await Promise.all([
+      const [userRes, txRes, settingsRes, agentRes] = await Promise.all([
         fetch("/api/auth/me"),
         fetch("/api/wallet/transactions"),
         fetch("/api/settings"),
+        fetch("/api/wallet/agent-cash-in"),
       ]);
 
       if (userRes.ok) {
@@ -64,6 +71,10 @@ export default function WalletPage() {
         const sData = await settingsRes.json();
         if (sData?.settings) setSettings(sData.settings);
       }
+      if (agentRes && agentRes.ok) {
+        const aData = await agentRes.json();
+        if (aData?.requests) setAgentRequests(aData.requests);
+      }
     } catch {
       //
     } finally {
@@ -74,6 +85,32 @@ export default function WalletPage() {
   useEffect(() => {
     fetchWalletData();
   }, []);
+
+  const handleAgentCashInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingAgentCashIn(true);
+    setAgentMsg(null);
+    try {
+      const res = await fetch("/api/wallet/agent-cash-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(agentAmount), note: agentNote }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAgentMsg({ text: data.message || "এজেন্টের কাছে রিকোয়েস্ট সফলভাবে পাঠানো হয়েছে!" });
+        setAgentAmount("");
+        setAgentNote("");
+        fetchWalletData();
+      } else {
+        setAgentMsg({ text: data.error || "রিকোয়েস্ট ব্যর্থ হয়েছে", error: true });
+      }
+    } catch {
+      setAgentMsg({ text: "সার্ভার এরর", error: true });
+    } finally {
+      setSubmittingAgentCashIn(false);
+    }
+  };
 
   const handleCashIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,19 +277,153 @@ export default function WalletPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Cash In Box */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                  <ArrowDownLeft className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-base">
-                    {language === "bn" ? "ক্যাশ ইন (টাকা জমা করুন)" : "Cash In"}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    {language === "bn" ? "বিকাশ / নগদ / রকেট দিয়ে টাকা পাঠান" : "Send money via bKash / Nagad / Rocket"}
-                  </p>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                    <ArrowDownLeft className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-base">
+                      {language === "bn" ? "ক্যাশ ইন (টাকা জমা করুন)" : "Cash In"}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {language === "bn" ? "জেলা এজেন্ট বা মোবাইল ব্যাংকিং দিয়ে" : "Via district agent or mobile banking"}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Method Tabs */}
+              <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl mb-5">
+                <button
+                  type="button"
+                  onClick={() => setCashInType("AGENT")}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                    cashInType === "AGENT"
+                      ? "bg-white text-orange-600 shadow-xs"
+                      : "text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  {language === "bn" ? "জেলা এজেন্টের মাধ্যমে (নগদ)" : "Via District Agent"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCashInType("ONLINE")}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                    cashInType === "ONLINE"
+                      ? "bg-white text-emerald-700 shadow-xs"
+                      : "text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  {language === "bn" ? "বিকাশ / নগদ / রকেট" : "bKash / Nagad / Rocket"}
+                </button>
+              </div>
+
+              {cashInType === "AGENT" && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-orange-50/60 rounded-2xl border border-orange-200/80 space-y-2">
+                    <div className="text-xs font-bold text-orange-800 flex items-center justify-between">
+                      <span>{language === "bn" ? "আপনার নির্ধারিত জেলা এজেন্ট:" : "Your District Agent:"}</span>
+                      <span className="bg-orange-200 text-orange-900 px-2 py-0.5 rounded-full text-[10px]">
+                        {userData?.customer?.agent?.district?.nameBn || "অনুমোদিত এজেন্ট"}
+                      </span>
+                    </div>
+                    <div className="text-sm font-extrabold text-gray-900">
+                      {userData?.customer?.agent?.user?.name || "জেলা এজেন্ট"}
+                    </div>
+                    <div className="text-xs font-mono font-bold text-gray-700">
+                      📞 {userData?.customer?.agent?.user?.phone || "017xxxxxxxx"}
+                    </div>
+                    <p className="text-[11px] text-gray-600 pt-1">
+                      {language === "bn"
+                        ? "এজেন্টকে সরাসরি নগদ টাকা প্রদান করে বা ফোনে পাঠিয়ে নিচে রিকোয়েস্ট দিন। এজেন্ট কনফার্ম করলেই সাথে সাথে আপনার অ্যাকাউন্টে টাকা যুক্ত হবে।"
+                        : "Hand over cash or send money to your district agent and submit a request below."}
+                    </p>
+                  </div>
+
+                  {agentMsg && (
+                    <div
+                      className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                        agentMsg.error ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"
+                      }`}
+                    >
+                      <span>{agentMsg.text}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleAgentCashInSubmit} className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        {language === "bn" ? "টাকার পরিমাণ (৳) *" : "Amount (৳) *"}
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min={10}
+                        placeholder="e.g. 500"
+                        value={agentAmount}
+                        onChange={(e) => setAgentAmount(e.target.value)}
+                        className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        {language === "bn" ? "রেফারেন্স / নোট (ঐচ্ছিক)" : "Note / Reference (Optional)"}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. সরাসরি নগদ প্রদান করা হয়েছে"
+                        value={agentNote}
+                        onChange={(e) => setAgentNote(e.target.value)}
+                        className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submittingAgentCashIn}
+                      className="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs transition shadow-sm disabled:opacity-50"
+                    >
+                      {submittingAgentCashIn
+                        ? (language === "bn" ? "পাঠানো হচ্ছে..." : "Submitting...")
+                        : (language === "bn" ? "এজেন্ট ক্যাশ-ইন রিকোয়েস্ট পাঠান" : "Submit Agent Request")}
+                    </button>
+                  </form>
+
+                  {agentRequests.length > 0 && (
+                    <div className="pt-3 border-t border-gray-100 space-y-2">
+                      <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        {language === "bn" ? "এজেন্ট রিকোয়েস্টের অবস্থা:" : "Agent Request Status:"}
+                      </div>
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                        {agentRequests.slice(0, 5).map((r) => (
+                          <div key={r.id} className="p-2.5 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs">
+                            <div>
+                              <span className="font-extrabold text-orange-600">৳ {r.amount}</span>
+                              <span className="text-[10px] text-gray-400 ml-2">{new Date(r.createdAt).toLocaleDateString("bn-BD")}</span>
+                            </div>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                r.status === "CONFIRMED"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : r.status === "PENDING"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {r.status === "CONFIRMED" ? "অনুমোদিত ✓" : r.status === "PENDING" ? "অপেক্ষমান ⏳" : "বাতিল ✕"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {cashInType === "ONLINE" && (
+                <div>
 
               {/* Official Payment Instructions */}
               <div className="bg-gray-50 p-4 rounded-2xl text-xs text-gray-600 space-y-1.5 mb-5 border border-gray-200">
@@ -391,6 +562,8 @@ export default function WalletPage() {
                   </p>
                 )}
               </form>
+                </div>
+              )}
             </div>
 
             {/* Cash Out Box */}

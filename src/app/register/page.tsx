@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/LanguageContext";
-import { User, Phone, Lock, Share2, AlertCircle, Mail, ShieldCheck } from "lucide-react";
+import { User, Phone, Lock, Share2, AlertCircle, Mail, ShieldCheck, MapPin } from "lucide-react";
 
 function RegisterContent() {
   const { language } = useLanguage();
@@ -13,11 +13,22 @@ function RegisterContent() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [districtId, setDistrictId] = useState("");
+  const [districts, setDistricts] = useState<any[]>([]);
   const [password, setPassword] = useState("");
   const [refCode, setRefCode] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/districts")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.districts) setDistricts(d.districts);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -49,6 +60,7 @@ function RegisterContent() {
           name,
           phone,
           email: email.trim() || undefined,
+          districtId: districtId ? Number(districtId) : undefined,
           password,
           refCode: refCode.trim() || undefined,
           termsAccepted: true,
@@ -145,6 +157,32 @@ function RegisterContent() {
               {language === "bn"
                 ? "* পাসওয়ার্ড ভুলে গেলে রিকভারির জন্য ইমেইল ব্যবহার করা যাবে।"
                 : "* Useful for password recovery if you forget your credentials."}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">
+              {language === "bn" ? "নিজ জেলা (District)" : "District"}
+            </label>
+            <div className="relative">
+              <MapPin className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+              <select
+                value={districtId}
+                onChange={(e) => setDistrictId(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-orange-500 focus:outline-none bg-white"
+              >
+                <option value="">{language === "bn" ? "-- জেলা নির্বাচন করুন (ঐচ্ছিক) --" : "-- Select District (Optional) --"}</option>
+                {districts.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nameBn} ({d.nameEn})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">
+              {language === "bn"
+                ? "* আপনার জেলার চ্যানেল পার্টনার ও এজেন্টের সহায়তা পেতে জেলা নির্বাচন করুন।"
+                : "* Select your district to connect with your local Channel Partner and Agent."}
             </p>
           </div>
 

@@ -54,10 +54,10 @@ export function Header() {
         </div>
       )}
 
-      {/* Slim & Compact Floating Header (v4: Logo + WOJOB + Login on left side only) */}
+      {/* Slim & Compact Floating Header (v8: Logo on left, Login on far right) */}
       <header className="sticky top-3 z-50 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full transition-all duration-200">
         <div className="bg-white/95 backdrop-blur-md rounded-full border border-gray-200/80 shadow-md shadow-orange-500/5 px-4 sm:px-5 h-12 flex items-center justify-between">
-          {/* Left Side: Brand Logo (WOJOB) + Login (লগইন) */}
+          {/* Left Side: Brand Logo (WOJOB) */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-8 h-8 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shadow-sm group-hover:scale-105 transition">
@@ -67,22 +67,19 @@ export function Header() {
                 WO<span className="text-orange-600">JOB</span>
               </div>
             </Link>
+          </div>
 
-            {/* Login (লগইন) placed on the left side with brand - no wrapping, slim & compact */}
-            {!user && (
+          {/* Right Side / Login (when logged out) or User Pill (when logged in) */}
+          <div className="flex items-center gap-2">
+            {!user ? (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1.5 rounded-full border border-orange-200/80 transition shadow-xs"
+                className="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-orange-200/80 transition shadow-xs"
               >
                 <LogIn className="w-3.5 h-3.5 text-orange-600" />
                 <span>{language === "bn" ? "লগইন" : "Login"}</span>
               </Link>
-            )}
-          </div>
-
-          {/* Right Side / Authenticated User Pill (when logged in) */}
-          <div className="flex items-center gap-2">
-            {user ? (
+            ) : (
               <div className="flex items-center gap-2">
                 {/* Wallet Shortcut */}
                 <Link
@@ -111,7 +108,7 @@ export function Header() {
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       </header>

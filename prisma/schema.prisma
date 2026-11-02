@@ -130,6 +130,7 @@ model ChannelPartner {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   district    District     @relation(fields: [districtId], references: [id])
   agents      Agent[]
+  customers   Customer[]
   commissions Commission[]
 
   @@map("channel_partners")
@@ -152,20 +153,24 @@ model Agent {
   district       District?      @relation(fields: [districtId], references: [id])
   customers      Customer[]
   commissions    Commission[]
+  cashIns        AgentCashInConfirmation[]
 
   @@map("agents")
 }
 
 model Customer {
-  id          String   @id @default(uuid())
-  userId      String   @unique @map("user_id")
-  agentId     String   @map("agent_id") // Lifetime referral binding!
-  assignedBy  String?  @map("assigned_by")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  agentId          String   @map("agent_id") // Lifetime referral binding!
+  channelPartnerId String?  @map("channel_partner_id")
+  assignedBy       String?  @map("assigned_by")
+  createdAt        DateTime @default(now()) @map("created_at")
 
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agent        Agent            @relation(fields: [agentId], references: [id], onDelete: Restrict)
-  applications JobApplication[]
+  user           User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent          Agent                     @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  channelPartner ChannelPartner?           @relation(fields: [channelPartnerId], references: [id])
+  applications   JobApplication[]
+  agentCashIns   AgentCashInConfirmation[]
 
   @@map("customers")
 }
@@ -188,6 +193,10 @@ model CandidateProfile {
   expectedSalary      String?   @map("expected_salary")
   preferredCategories String?   @map("preferred_categories")
   preferredDistricts  String?   @map("preferred_districts")
+  preferredCvType     String    @default("ONLINE") @map("preferred_cv_type")
+  cvPdfUrl            String?   @map("cv_pdf_url")
+  documents           String?
+  references          String?
   completeness        Int       @default(0)
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
@@ -301,6 +310,8 @@ model Job {
   id                  String    @id @default(uuid())
   institutionId       String?   @map("institution_id")
   postedByAdmin       Boolean   @default(false) @map("posted_by_admin")
+  logoUrl             String?   @map("logo_url")
+  applicationFee      Float     @default(0.0) @map("application_fee")
   titleBn             String    @map("title_bn")
   titleEn             String    @map("title_en")
   organizationName    String    @map("organization_name")
@@ -706,4 +717,19 @@ model PasswordResetToken {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("password_reset_tokens")
+}
+
+model AgentCashInConfirmation {
+  id          String   @id @default(uuid())
+  agentId     String   @map("agent_id")
+  customerId  String   @map("customer_id")
+  amount      Float
+  note        String?
+  status      String   @default("CONFIRMED")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  agent    Agent    @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  @@map("agent_cash_in_confirmations")
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendTemplatedSms } from "@/lib/sms";
+import { debitWallet } from "@/lib/wallet";
 
 export async function POST(
   req: NextRequest,
@@ -88,16 +89,48 @@ export async function POST(
       );
     }
 
-    // Take snapshot of profile at apply time (Section 6.3)
+    // Check application fee & wallet balance
+    const fee = job.applicationFee || 0;
+    if (fee > 0) {
+      const wallet = await prisma.wallet.findUnique({
+        where: { userId: session.userId },
+      });
+      const currentBal = wallet?.balance || 0;
+      if (currentBal < fee) {
+        return NextResponse.json(
+          {
+            error: `আবেদনের জন্য ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। আবেদন ফি ৳${fee}, আপনার বর্তমান ব্যালেন্স ৳${currentBal}। অনুগ্রহ করে ওয়ালেট ক্যাশ-ইন করুন।`,
+            insufficientBalance: true,
+            requiredFee: fee,
+            currentBalance: currentBal,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Take snapshot of profile at apply time (Section 6.3 & v8)
+    const chosenCvType = profile?.preferredCvType || "ONLINE";
+    let parsedDocs = null;
+    let parsedRefs = null;
+    try {
+      if (profile?.documents) parsedDocs = JSON.parse(profile.documents);
+      if (profile?.references) parsedRefs = JSON.parse(profile.references);
+    } catch {}
+
     const profileSnapshot = JSON.stringify({
       candidateName: customer.user.name,
       phone: customer.user.phone,
       email: customer.user.email,
       personalInfo: profile,
+      chosenCvType,
+      cvPdfUrl: profile?.cvPdfUrl || customer.user.cvFile?.fileUrl || null,
       educations: customer.user.educations,
       experiences: customer.user.experiences,
       skills: customer.user.skills.map((s) => s.skillName),
-      cvUrl: customer.user.cvFile?.fileUrl || null,
+      documents: parsedDocs,
+      references: parsedRefs,
+      feePaid: fee,
       appliedDate: new Date().toISOString(),
     });
 
@@ -110,6 +143,18 @@ export async function POST(
         status: "APPLIED",
       },
     });
+
+    // Deduct application fee from wallet if fee > 0
+    if (fee > 0) {
+      await debitWallet({
+        userId: customer.user.id,
+        amount: fee,
+        type: "PURCHASE",
+        referenceType: "JOB_APPLICATION",
+        referenceId: application.id,
+        note: `চাকরিতে আবেদন ফি কর্তন: ${job.titleBn} (${job.organizationName})`,
+      });
+    }
 
     // Create in-app notification for candidate
     await prisma.notification.create({

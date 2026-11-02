@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "@/components/LanguageContext";
 import {
   Search,
@@ -46,6 +47,7 @@ function getCategoryIcon(slug: string, icon?: string) {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const { language, t } = useLanguage();
   const [jobs, setJobs] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -200,7 +202,7 @@ export default function HomePage() {
             </p>
           </div>
           <Link
-            href="/jobs"
+            href="/categories"
             className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
           >
             <span>{t("view_all")}</span>
@@ -255,7 +257,7 @@ export default function HomePage() {
             </p>
           </div>
           <Link
-            href="/jobs"
+            href="/categories"
             className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
           >
             <span>{t("view_all")}</span>
@@ -273,13 +275,18 @@ export default function HomePage() {
             return (
               <div
                 key={job.id}
-                className="bg-white rounded-3xl border border-gray-200/80 p-6 shadow-sm hover:shadow-xl hover:border-orange-300 transition-all duration-200 flex flex-col justify-between group"
+                onClick={() => router.push(`/jobs/${job.id}`)}
+                className="bg-white rounded-3xl border border-gray-200/80 p-6 shadow-sm hover:shadow-xl hover:border-orange-300 transition-all duration-200 flex flex-col justify-between group cursor-pointer"
               >
                 <div>
                   {/* Top: Icon + Days left */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-black text-base border border-orange-100 group-hover:scale-105 transition">
-                      {job.organizationName[0]}
+                    <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center font-black text-base border border-orange-100 group-hover:scale-105 transition overflow-hidden shrink-0">
+                      {job.logoUrl ? (
+                        <img src={job.logoUrl} alt={job.organizationName} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span>{job.organizationName[0]}</span>
+                      )}
                     </div>
                     <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-[11px] px-2.5 py-1 rounded-full font-bold border border-amber-200">
                       <Clock className="w-3 h-3" />
@@ -289,9 +296,9 @@ export default function HomePage() {
 
                   {/* Title & Organization */}
                   <h3 className="mt-3.5 font-black text-gray-900 text-base line-clamp-1 group-hover:text-orange-600 transition">
-                    <Link href={`/jobs/${job.id}`}>
+                    <span className="hover:underline">
                       {language === "bn" ? job.titleBn : job.titleEn || job.titleBn}
-                    </Link>
+                    </span>
                   </h3>
                   <p className="text-xs text-gray-500 font-medium mt-1">
                     {job.organizationName}
@@ -323,12 +330,16 @@ export default function HomePage() {
 
                 {/* View Details / Apply Button */}
                 <div className="mt-5 pt-3.5 border-t border-gray-100">
-                  <Link
-                    href={`/jobs/${job.id}`}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/jobs/${job.id}`);
+                    }}
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2"
                   >
                     <span>{t("apply_now")}</span>
-                  </Link>
+                  </button>
 
                   {applyMessage && applyMessage.id === job.id && (
                     <p

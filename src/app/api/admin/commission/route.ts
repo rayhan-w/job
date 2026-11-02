@@ -9,7 +9,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const globalSetting = await prisma.setting.findUnique({ where: { key: "COMMISSION_ENABLED" } });
+    const [globalSetting, pubRefSetting, defAgentSetting, defCpSetting] = await Promise.all([
+      prisma.setting.findUnique({ where: { key: "COMMISSION_ENABLED" } }),
+      prisma.setting.findUnique({ where: { key: "PUBLIC_REFERRAL_ENABLED" } }),
+      prisma.setting.findUnique({ where: { key: "DEFAULT_AGENT_COMMISSION_PCT" } }),
+      prisma.setting.findUnique({ where: { key: "DEFAULT_CP_COMMISSION_PCT" } }),
+    ]);
     const rules = await prisma.commissionRule.findMany({ include: { product: true } });
     const agents = await prisma.agent.findMany({ include: { user: true, channelPartner: { include: { district: true } } } });
     const commissions = await prisma.commission.findMany({
@@ -25,6 +30,9 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       globalEnabled: globalSetting ? globalSetting.value === "true" : true,
+      publicReferralEnabled: pubRefSetting ? pubRefSetting.value !== "false" : true,
+      defaultAgentPercentage: defAgentSetting ? Number(defAgentSetting.value) : 10,
+      defaultCpPercentage: defCpSetting ? Number(defCpSetting.value) : 5,
       rules,
       agents,
       recentCommissions: commissions,
@@ -42,7 +50,17 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Only Super Admin can modify commission settings" }, { status: 403 });
     }
 
-    const { globalEnabled, agentId, agentCommissionActive, newAgentPercentage, newCpPercentage, productId } = await req.json();
+    const {
+      globalEnabled,
+      publicReferralEnabled,
+      defaultAgentPercentage,
+      defaultCpPercentage,
+      agentId,
+      agentCommissionActive,
+      newAgentPercentage,
+      newCpPercentage,
+      productId,
+    } = await req.json();
 
     // 1. Toggle global commission
     if (globalEnabled !== undefined) {
@@ -59,6 +77,41 @@ export async function PATCH(req: NextRequest) {
           action: "COMMISSION_GLOBAL_TOGGLE",
           details: JSON.stringify({ enabled: globalEnabled }),
         },
+      });
+    }
+
+    // Toggle public referral (Item 6c)
+    if (publicReferralEnabled !== undefined) {
+      await prisma.setting.upsert({
+        where: { key: "PUBLIC_REFERRAL_ENABLED" },
+        create: { key: "PUBLIC_REFERRAL_ENABLED", value: String(publicReferralEnabled) },
+        update: { value: String(publicReferralEnabled) },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: session.userId,
+          role: session.role,
+          action: "PUBLIC_REFERRAL_TOGGLE",
+          details: JSON.stringify({ enabled: publicReferralEnabled }),
+        },
+      });
+    }
+
+    // Update global default commission percentages (Item 5b)
+    if (defaultAgentPercentage !== undefined) {
+      await prisma.setting.upsert({
+        where: { key: "DEFAULT_AGENT_COMMISSION_PCT" },
+        create: { key: "DEFAULT_AGENT_COMMISSION_PCT", value: String(defaultAgentPercentage) },
+        update: { value: String(defaultAgentPercentage) },
+      });
+    }
+
+    if (defaultCpPercentage !== undefined) {
+      await prisma.setting.upsert({
+        where: { key: "DEFAULT_CP_COMMISSION_PCT" },
+        create: { key: "DEFAULT_CP_COMMISSION_PCT", value: String(defaultCpPercentage) },
+        update: { value: String(defaultCpPercentage) },
       });
     }
 

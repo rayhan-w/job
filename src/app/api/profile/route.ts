@@ -43,6 +43,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const {
       name,
+      avatarUrl,
       fatherName,
       motherName,
       dob,
@@ -53,16 +54,23 @@ export async function PUT(req: NextRequest) {
       districtId,
       careerObjective,
       expectedSalary,
+      preferredCvType = "ONLINE",
+      cvPdfUrl,
+      documents,
+      references,
       educations = [],
       experiences = [],
       skills = [],
     } = body;
 
-    // Update User Name
-    if (name) {
+    // Update User Name & Avatar
+    const userUpdateData: any = {};
+    if (name) userUpdateData.name = name;
+    if (avatarUrl !== undefined) userUpdateData.avatarUrl = avatarUrl;
+    if (Object.keys(userUpdateData).length > 0) {
       await prisma.user.update({
         where: { id: session.userId },
-        data: { name },
+        data: userUpdateData,
       });
     }
 
@@ -82,6 +90,10 @@ export async function PUT(req: NextRequest) {
         phone: session.phone,
         careerObjective,
         expectedSalary,
+        preferredCvType: preferredCvType || "ONLINE",
+        cvPdfUrl: cvPdfUrl || null,
+        documents: documents ? (typeof documents === "string" ? documents : JSON.stringify(documents)) : null,
+        references: references ? (typeof references === "string" ? references : JSON.stringify(references)) : null,
       },
       update: {
         fatherName,
@@ -94,6 +106,10 @@ export async function PUT(req: NextRequest) {
         districtId: districtId ? Number(districtId) : null,
         careerObjective,
         expectedSalary,
+        preferredCvType: preferredCvType || "ONLINE",
+        cvPdfUrl: cvPdfUrl || null,
+        documents: documents ? (typeof documents === "string" ? documents : JSON.stringify(documents)) : null,
+        references: references ? (typeof references === "string" ? references : JSON.stringify(references)) : null,
       },
     });
 
@@ -146,11 +162,11 @@ export async function PUT(req: NextRequest) {
     // Calculate completeness honestly from 0% based on filled fields
     const dbUser = await prisma.user.findUnique({ where: { id: session.userId } });
     let completeness = 0;
-    if (dbUser?.avatarUrl) completeness += 20;
+    if (dbUser?.avatarUrl || avatarUrl) completeness += 20;
     if (fatherName && motherName) completeness += 20;
     if (presentAddress && districtId) completeness += 20;
     if (Array.isArray(educations) && educations.length > 0) completeness += 20;
-    if (careerObjective || expectedSalary || (Array.isArray(experiences) && experiences.length > 0)) completeness += 20;
+    if (careerObjective || expectedSalary || (Array.isArray(skills) && skills.length > 0) || (Array.isArray(experiences) && experiences.length > 0)) completeness += 20;
     completeness = Math.min(100, completeness);
 
     await prisma.candidateProfile.update({

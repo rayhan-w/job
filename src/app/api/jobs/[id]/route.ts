@@ -69,12 +69,32 @@ export async function GET(
       }
     }
 
+    let walletBalance = 0;
+    let candidateUser = null;
+    if (session) {
+      const w = await prisma.wallet.findUnique({ where: { userId: session.userId } });
+      if (w) walletBalance = w.balance;
+
+      candidateUser = await prisma.user.findUnique({
+        where: { id: session.userId },
+        include: {
+          candidateProfile: true,
+          educations: true,
+          experiences: true,
+          skills: true,
+          cvFile: true,
+        },
+      });
+    }
+
     return NextResponse.json({
       job,
       hasApplied,
       isLoggedIn,
       userRole,
       profileComplete,
+      walletBalance,
+      candidateUser,
     });
   } catch (error) {
     console.error("GET job by id error:", error);
@@ -103,6 +123,8 @@ export async function PATCH(
     if (body.titleBn !== undefined) updateData.titleBn = body.titleBn;
     if (body.titleEn !== undefined) updateData.titleEn = body.titleEn;
     if (body.organizationName !== undefined) updateData.organizationName = body.organizationName;
+    if (body.logoUrl !== undefined) updateData.logoUrl = body.logoUrl;
+    if (body.applicationFee !== undefined) updateData.applicationFee = Number(body.applicationFee);
     if (body.categoryId !== undefined) updateData.categoryId = body.categoryId;
     if (body.jobType !== undefined) updateData.jobType = body.jobType;
     if (body.workplaceLocation !== undefined) updateData.workplaceLocation = body.workplaceLocation;

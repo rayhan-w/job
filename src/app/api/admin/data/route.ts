@@ -86,7 +86,26 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 6. Settings
+    // 6. Agent Cash-in Confirmations (Item 6d)
+    const agentCashInConfirmations = await prisma.agentCashInConfirmation.findMany({
+      include: {
+        agent: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+            district: true,
+          },
+        },
+        customer: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    // 7. Settings
     const settings = await prisma.setting.findMany();
 
     return NextResponse.json({
@@ -95,6 +114,7 @@ export async function GET(req: NextRequest) {
       jobs,
       cashInRequests,
       cashOutRequests,
+      agentCashInConfirmations,
       quizPackages,
       settings,
     });

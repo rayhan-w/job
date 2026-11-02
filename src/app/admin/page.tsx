@@ -60,6 +60,8 @@ export default function AdminPage() {
     titleBn: "",
     titleEn: "",
     organizationName: "",
+    logoUrl: "",
+    applicationFee: 0,
     categoryId: "",
     jobType: "FULL_TIME",
     workplaceLocation: "ঢাকা",
@@ -767,6 +769,8 @@ export default function AdminPage() {
                   titleBn: "",
                   titleEn: "",
                   organizationName: "",
+                  logoUrl: "",
+                  applicationFee: 0,
                   categoryId: categories[0]?.id || "",
                   jobType: "FULL_TIME",
                   workplaceLocation: "ঢাকা",
@@ -836,6 +840,17 @@ export default function AdminPage() {
                 </div>
 
                 <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">প্রতিষ্ঠানের লোগো URL (Logo Image URL)</label>
+                  <input
+                    type="url"
+                    value={jobForm.logoUrl}
+                    onChange={(e) => setJobForm({ ...jobForm, logoUrl: e.target.value })}
+                    placeholder="https://example.com/logo.png"
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">ক্যাটাগরি *</label>
                   <select
                     value={jobForm.categoryId}
@@ -894,6 +909,18 @@ export default function AdminPage() {
                     value={jobForm.salaryRange}
                     onChange={(e) => setJobForm({ ...jobForm, salaryRange: e.target.value })}
                     placeholder="e.g. ৳ ৩০,০০০ - ৫০,০০০"
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">আবেদন ফি (৳ Application Fee)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={jobForm.applicationFee}
+                    onChange={(e) => setJobForm({ ...jobForm, applicationFee: Number(e.target.value) })}
+                    placeholder="0 (বিনামূল্যে হলে 0 লিখুন)"
                     className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:border-orange-500 focus:outline-none"
                   />
                 </div>
@@ -1090,6 +1117,8 @@ export default function AdminPage() {
                                 titleBn: job.titleBn,
                                 titleEn: job.titleEn || "",
                                 organizationName: job.organizationName,
+                                logoUrl: job.logoUrl || "",
+                                applicationFee: job.applicationFee || 0,
                                 categoryId: job.categoryId,
                                 jobType: job.jobType,
                                 workplaceLocation: job.workplaceLocation || "",
@@ -1574,6 +1603,78 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
+
+          {/* Agent Cash-In Confirmations Table (Item 6d) */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-base text-gray-900 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-orange-600" />
+                <span>জেলা এজেন্ট ক্যাশ-ইন অডিট লগ ({adminData?.agentCashInConfirmations?.length || 0})</span>
+              </h3>
+              <span className="text-xs text-gray-500 font-semibold">
+                এজেন্টদের অনুমোদিত ও প্রক্রিয়াধীন ক্যাশ-ইন
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-gray-600">
+                <thead className="bg-gray-50 text-gray-900 font-bold uppercase tracking-wider text-[11px] border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3">গ্রাহক</th>
+                    <th className="px-4 py-3">দায়িত্বপ্রাপ্ত এজেন্ট</th>
+                    <th className="px-4 py-3">জেলা</th>
+                    <th className="px-4 py-3">পরিমাণ</th>
+                    <th className="px-4 py-3">নোট / রেফারেন্স</th>
+                    <th className="px-4 py-3">তারিখ</th>
+                    <th className="px-4 py-3">স্ট্যাটাস</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {(adminData?.agentCashInConfirmations || []).length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                        কোনো এজেন্ট ক্যাশ-ইন রেকর্ড নেই।
+                      </td>
+                    </tr>
+                  ) : (
+                    (adminData?.agentCashInConfirmations || []).map((c: any) => (
+                      <tr key={c.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3 font-bold text-gray-900">
+                          {c.customer?.user?.name || "-"}
+                          <div className="text-[10px] text-gray-400 font-mono">{c.customer?.user?.phone}</div>
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-gray-800">
+                          {c.agent?.user?.name || "-"}
+                          <div className="text-[10px] text-gray-400 font-mono">{c.agent?.user?.phone}</div>
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-700">
+                          {c.agent?.district?.nameBn || "ঢাকা"}
+                        </td>
+                        <td className="px-4 py-3 font-black text-orange-600">৳ {c.amount}</td>
+                        <td className="px-4 py-3 italic text-gray-500">{c.note || "-"}</td>
+                        <td className="px-4 py-3 text-gray-400">
+                          {new Date(c.createdAt).toLocaleDateString("bn-BD")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              c.status === "CONFIRMED"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : c.status === "PENDING"
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-red-50 text-red-700"
+                            }`}
+                          >
+                            {c.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1906,22 +2007,95 @@ export default function AdminPage() {
               <h2 className="text-lg font-black text-gray-900">গ্লোবাল ও এজেন্ট কমিশন কন্ট্রোল</h2>
               <p className="text-xs text-gray-500">সুপার অ্যাডমিন অনুমতিতে কমিশন অন/অফ ও রেট সমন্বয়</p>
             </div>
-            <button
-              onClick={async () => {
-                const next = !commissionSettings?.globalEnabled;
-                await fetch("/api/admin/commission", {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ globalEnabled: next }),
-                });
-                fetchAllAdminData();
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm ${
-                commissionSettings?.globalEnabled ? "bg-emerald-600" : "bg-red-600"
-              }`}
-            >
-              গ্লোবাল কমিশন: {commissionSettings?.globalEnabled ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={async () => {
+                  const next = !commissionSettings?.globalEnabled;
+                  await fetch("/api/admin/commission", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ globalEnabled: next }),
+                  });
+                  fetchAllAdminData();
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm ${
+                  commissionSettings?.globalEnabled ? "bg-emerald-600" : "bg-red-600"
+                }`}
+              >
+                গ্লোবাল কমিশন: {commissionSettings?.globalEnabled ? "সক্রিয় (ON)" : "বন্ধ (OFF)"}
+              </button>
+
+              <button
+                onClick={async () => {
+                  const next = commissionSettings?.publicReferralEnabled === false ? true : false;
+                  await fetch("/api/admin/commission", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ publicReferralEnabled: next }),
+                  });
+                  fetchAllAdminData();
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm ${
+                  commissionSettings?.publicReferralEnabled !== false ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"
+                }`}
+              >
+                পাবলিক রেফারেল: {commissionSettings?.publicReferralEnabled !== false ? "চালু (ON)" : "বন্ধ (OFF)"}
+              </button>
+            </div>
+          </div>
+
+          {/* Default Commission Rates (Item 5b) */}
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200/80 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                ডিফল্ট জেলা এজেন্ট কমিশন (%)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                defaultValue={commissionSettings?.defaultAgentPercentage ?? 10}
+                id="admin-default-agent-pct"
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-bold bg-white focus:outline-none focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                ডিফল্ট চ্যানেল পার্টনার কমিশন (%)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                defaultValue={commissionSettings?.defaultCpPercentage ?? 5}
+                id="admin-default-cp-pct"
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-bold bg-white focus:outline-none focus:border-orange-500"
+              />
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const agentPct = Number((document.getElementById("admin-default-agent-pct") as HTMLInputElement)?.value);
+                  const cpPct = Number((document.getElementById("admin-default-cp-pct") as HTMLInputElement)?.value);
+                  await fetch("/api/admin/commission", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      defaultAgentPercentage: agentPct,
+                      defaultCpPercentage: cpPct,
+                    }),
+                  });
+                  setActionMessage("ডিফল্ট কমিশন হার সফলভাবে আপডেট করা হয়েছে!");
+                  fetchAllAdminData();
+                }}
+                className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+              >
+                ডিফল্ট রেট সংরক্ষণ করুন
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -1947,6 +2121,22 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={async () => {
+                          const newRate = prompt("এজেন্টের নতুন কমিশন রেট (%) দিন:", String(ag.commissionRate));
+                          if (newRate !== null && !isNaN(Number(newRate))) {
+                            await fetch("/api/admin/commission", {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ agentId: ag.id, newAgentPercentage: Number(newRate) }),
+                            });
+                            fetchAllAdminData();
+                          }
+                        }}
+                        className="text-xs font-bold text-orange-600 hover:underline mr-3"
+                      >
+                        রেট পরিবর্তন
+                      </button>
                       <button
                         onClick={async () => {
                           await fetch("/api/admin/commission", {
