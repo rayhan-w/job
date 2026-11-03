@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { prisma } from "@/lib/prisma";
 
 interface SendEmailOptions {
   to: string;
@@ -7,63 +8,92 @@ interface SendEmailOptions {
   text?: string;
 }
 
-export async function getEmailTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+export async function getEmailConfig() {
+  let host = process.env.SMTP_HOST || "";
+  let port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
+  let user = process.env.SMTP_USER || "";
+  let pass = process.env.SMTP_PASS || "";
+  let from = process.env.SMTP_FROM || '"WOJOB Portal" <no-reply@wojob.com>';
 
-  if (host && user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
+  try {
+    const dbSettings = await prisma.setting.findMany({
+      where: {
+        key: { in: ["smtpHost", "smtpPort", "smtpUser", "smtpPass", "smtpFrom"] },
+      },
     });
+
+    for (const s of dbSettings) {
+      if (s.key === "smtpHost" && s.value?.trim()) host = s.value.trim();
+      if (s.key === "smtpPort" && s.value?.trim()) port = parseInt(s.value.trim(), 10);
+      if (s.key === "smtpUser" && s.value?.trim()) user = s.value.trim();
+      if (s.key === "smtpPass" && s.value?.trim()) pass = s.value.trim();
+      if (s.key === "smtpFrom" && s.value?.trim()) from = s.value.trim();
+    }
+  } catch (err) {
+    console.error("[Email] Failed to fetch SMTP settings from database:", err);
   }
 
-  // Fallback test transporter (Ethereal test email account)
-  const testAccount = await nodemailer.createTestAccount();
-  return nodemailer.createTransport({
-    host: "smtp.ethereal.email",
-    port: 587,
-    secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
+  const isConfigured = Boolean(host && user && pass);
+
+  return {
+    host,
+    port,
+    user,
+    pass,
+    from,
+    isConfigured,
+  };
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  const transporter = await getEmailTransporter();
-  const from = process.env.SMTP_FROM || '"WOJOB Portal" <no-reply@wojob.com>';
+  const config = await getEmailConfig();
 
-  const info = await transporter.sendMail({
-    from,
-    to,
-    subject,
-    text: text || html.replace(/<[^>]*>/g, ""),
-    html,
-  });
-
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  console.log(`[Email] Message sent to ${to}: ${info.messageId}`);
-  if (previewUrl) {
-    console.log(`[Email] Preview URL: ${previewUrl}`);
+  if (!config.isConfigured) {
+    console.warn(`[Email] SMTP is not configured. Email to ${to} was not sent via real mail server.`);
+    return {
+      success: false,
+      unconfigured: true,
+      message: "SMTP is not configured in settings or environment.",
+    };
   }
 
-  return {
-    success: true,
-    messageId: info.messageId,
-    previewUrl: previewUrl || undefined,
-  };
+  try {
+    const transporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.port === 465,
+      auth: {
+        user: config.user,
+        pass: config.pass,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: config.from,
+      to,
+      subject,
+      text: text || html.replace(/<[^>]*>/g, ""),
+      html,
+    });
+
+    console.log(`[Email] Message sent successfully to ${to}: ${info.messageId}`);
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
+  } catch (error: any) {
+    console.error(`[Email] Failed to send email to ${to}:`, error?.message || error);
+    return {
+      success: false,
+      error: error?.message || "Failed to send email",
+    };
+  }
 }
 
 export async function sendPasswordResetEmail(toEmail: string, resetUrl: string, name?: string) {
   const subject = "পাসওয়ার্ড রিসেট লিংক — WOJOB Job Portal";
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; rounded: 16px;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 16px;">
       <div style="text-align: center; margin-bottom: 24px;">
         <h2 style="color: #ea580c; margin: 0;">WOJOB</h2>
         <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0 0;">Career & Recruitment Platform</p>
@@ -98,22 +128,9 @@ export async function sendWelcomeEmail(toEmail: string, name?: string) {
   const subject = "WOJOB প্ল্যাটফর্মে স্বাগতম!";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 16px;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="color: #ea580c; margin: 0;">WOJOB</h2>
-        <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0 0;">Career & Recruitment Platform</p>
-      </div>
-      <p style="font-size: 15px; color: #111827;">প্রিয় ${name || "ব্যবহারকারী"},</p>
-      <p style="font-size: 14px; color: #374151; line-height: 1.6;">
-        WOJOB প্ল্যাটফর্মে আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। এখন আপনি সরকারি ও বেসরকারি চাকরির বিজ্ঞপ্তি দেখতে পারবেন, সরাসরি ১-ক্লিকে আবেদন করতে পারবেন এবং কুইজ প্রতিযোগিতায় অংশ নিয়ে ক্যাশ বোনাস জিততে পারবেন।
-      </p>
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="https://job-portal-bd-six.vercel.app/dashboard" style="background-color: #10b981; color: #ffffff; padding: 12px 28px; text-decoration: none; font-weight: bold; font-size: 14px; border-radius: 8px; display: inline-block;">
-          আপনার ড্যাশবোর্ডে প্রবেশ করুন
-        </a>
-      </div>
-      <p style="font-size: 12px; color: #6b7280; line-height: 1.5;">
-        যেকোনো প্রয়োজনে আমাদের হেল্পলাইনে যোগাযোগ করতে পারেন।
-      </p>
+      <h2 style="color: #ea580c; text-align: center;">WOJOB এ আপনাকে স্বাগতম</h2>
+      <p style="font-size: 14px; color: #374151;">প্রিয় ${name || "ব্যবহারকারী"},</p>
+      <p style="font-size: 14px; color: #374151;">আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। এখনই লগইন করে আপনার পছন্দের চাকরিতে আবেদন করুন।</p>
     </div>
   `;
 

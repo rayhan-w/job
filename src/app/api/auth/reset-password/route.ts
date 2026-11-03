@@ -46,9 +46,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Find associated user
-    const user = await prisma.user.findUnique({
-      where: { email: resetRecord.email },
+    // Find associated user by email or phone
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: resetRecord.email },
+          { phone: resetRecord.email },
+        ],
+      },
     });
 
     if (!user) {

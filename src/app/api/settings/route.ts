@@ -14,6 +14,13 @@ export async function GET() {
       youtubeUrl: "",
       linkedinUrl: "",
 
+      // SMTP / Email Server Settings
+      smtpHost: "",
+      smtpPort: "465",
+      smtpUser: "",
+      smtpPass: "",
+      smtpFrom: '"WOJOB Portal" <support@jobportal.bd>',
+
       // Cash-in Payment Details
       bkashNumber: "01700-000000",
       nagadNumber: "01800-000000",

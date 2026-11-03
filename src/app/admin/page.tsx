@@ -42,6 +42,7 @@ import {
   ToggleRight,
   Shield,
   Star,
+  Mail,
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -172,7 +173,7 @@ export default function AdminPage() {
   });
 
   // Settings & Content sub-tab
-  const [settingsSubTab, setSettingsSubTab] = useState<"site" | "payment" | "content">("site");
+  const [settingsSubTab, setSettingsSubTab] = useState<"site" | "payment" | "content" | "smtp">("site");
   const [siteSettings, setSiteSettings] = useState({
     siteName: "WOJOB Portal",
     siteLogo: "",
@@ -212,6 +213,13 @@ export default function AdminPage() {
     globalQuizTargetScore: "8",
     globalQuizBonusAmount: "100",
     globalQuizPerPointRate: "0",
+
+    // SMTP & Email Server Settings
+    smtpHost: "",
+    smtpPort: "465",
+    smtpUser: "",
+    smtpPass: "",
+    smtpFrom: "",
   });
 
   const fetchAllAdminData = async () => {
@@ -2655,6 +2663,14 @@ export default function AdminPage() {
             >
               ওয়েবসাইট কন্টেন্ট ও লিগ্যাল পেজ
             </button>
+            <button
+              onClick={() => setSettingsSubTab("smtp")}
+              className={`px-4 py-2 font-bold text-xs rounded-xl transition ${
+                settingsSubTab === "smtp" ? "bg-slate-900 text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              ইমেইল ও SMTP সার্ভার
+            </button>
           </div>
 
           <form onSubmit={handleSaveSettings} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6">
@@ -2871,6 +2887,80 @@ export default function AdminPage() {
                     onChange={(e) => setSiteSettings({ ...siteSettings, contentRefund: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-gray-200 text-xs"
                   />
+                </div>
+              </div>
+            )}
+
+            {settingsSubTab === "smtp" && (
+              <div className="space-y-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-xs text-orange-900 space-y-2">
+                  <div className="font-bold flex items-center gap-1.5 text-orange-800">
+                    <Mail className="w-4 h-4 text-orange-600" />
+                    <span>Gmail / SMTP সার্ভার কনফিগারেশন নির্দেশিকা</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    পাসওয়ার্ড রিসেট এবং নোটিফিকেশন ইমেইল ব্যবহারকারীর আসল Gmail/ইনবক্সে পাঠানোর জন্য নিচের তথ্য দিন। জিমেইলের জন্য Host: <code className="bg-orange-100 px-1 py-0.5 rounded font-mono font-bold">smtp.gmail.com</code>, Port: <code className="bg-orange-100 px-1 py-0.5 rounded font-mono font-bold">465</code> (বা 587) এবং আপনার জিমেইল অ্যাকাউন্ট থেকে তৈরি করা <code className="bg-orange-100 px-1 py-0.5 rounded font-mono font-bold">16-character App Password</code> দিন।
+                  </p>
+                  <p className="text-[11px] text-orange-700">
+                    * নোট: SMTP কনফিগার না থাকলেও সিস্টেম স্বয়ংক্রিয়ভাবে সরাসরি ভেরিফিকেশন লিংকের মাধ্যমে পাসওয়ার্ড রিসেট সম্পন্ন করতে পারে, ফলে কোনো ব্যবহারকারী আটকে থাকবে না।
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">SMTP Host</label>
+                    <input
+                      type="text"
+                      placeholder="smtp.gmail.com"
+                      value={siteSettings.smtpHost}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, smtpHost: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">SMTP Port</label>
+                    <input
+                      type="text"
+                      placeholder="465 (SSL) or 587 (TLS)"
+                      value={siteSettings.smtpPort}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, smtpPort: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">SMTP User / Gmail Address</label>
+                    <input
+                      type="email"
+                      placeholder="example@gmail.com"
+                      value={siteSettings.smtpUser}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, smtpUser: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">SMTP Password (Google App Password)</label>
+                    <input
+                      type="password"
+                      placeholder="•••• •••• •••• ••••"
+                      value={siteSettings.smtpPass}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, smtpPass: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Sender From Name & Email</label>
+                    <input
+                      type="text"
+                      placeholder='"WOJOB Career" <support@jobportal.bd>'
+                      value={siteSettings.smtpFrom}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, smtpFrom: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-mono"
+                    />
+                  </div>
                 </div>
               </div>
             )}

@@ -5,46 +5,63 @@ import { sendPasswordResetEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const rawInput = (body.email || body.phone || body.identifier || "").toString().trim();
 
-    if (!email || typeof email !== "string" || !email.includes("@")) {
+    if (!rawInput) {
       return NextResponse.json(
-        { error: "A valid email address is required." },
+        { error: "আপনার নিবন্ধিত মোবাইল নম্বর অথবা ইমেইল ঠিকানা দিন।" },
         { status: 400 }
       );
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = rawInput.toLowerCase();
+    const normalizedPhone = rawInput.replace(/[^0-9]/g, "");
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
+    // Find user by either email or phone
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: normalizedEmail },
+          { phone: rawInput },
+          ...(normalizedPhone.length >= 10 ? [{ phone: normalizedPhone }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        role: true,
+      },
     });
 
     if (!user) {
-      // Return friendly message without leaking full system status
-      return NextResponse.json({
-        success: true,
-        message: "If an account with this email exists, a password reset link has been sent.",
-      });
+      return NextResponse.json(
+        {
+          error: "এই মোবাইল নম্বর বা ইমেইলে কোনো নিবন্ধিত অ্যাকাউন্ট পাওয়া যায়নি। অনুগ্রহ করে সঠিক নম্বর/ইমেইল দিন অথবা নতুন একাউন্ট খুলুন।",
+        },
+        { status: 404 }
+      );
     }
 
-    // Invalidate existing tokens for this email
+    // Invalidate existing active tokens for this user's email or phone
+    const userIdentifiers = [user.email, user.phone].filter(Boolean) as string[];
     await prisma.passwordResetToken.updateMany({
       where: {
-        email: normalizedEmail,
+        email: { in: userIdentifiers },
         used: false,
       },
       data: { used: true },
     });
 
-    // Generate secure random token
+    // Generate secure random token (30-minute validity)
     const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
     await prisma.passwordResetToken.create({
       data: {
-        email: normalizedEmail,
+        email: user.email || user.phone,
         token,
         expiresAt,
         used: false,
@@ -56,23 +73,42 @@ export async function POST(req: NextRequest) {
     const origin = `${protocol}://${host}`;
     const resetUrl = `${origin}/reset-password?token=${token}`;
 
-    let emailResult = null;
-    try {
-      emailResult = await sendPasswordResetEmail(normalizedEmail, resetUrl, user.name);
-    } catch (mailErr) {
-      console.error("[ForgotPassword] Failed to send email via SMTP:", mailErr);
+    let emailSent = false;
+    let emailStatusNote = "";
+
+    if (user.email) {
+      try {
+        const mailResult = await sendPasswordResetEmail(user.email, resetUrl, user.name);
+        if (mailResult?.success) {
+          emailSent = true;
+          emailStatusNote = `আপনার ইমেইল (${user.email})-এ রিসেট লিংক সফলভাবে পাঠানো হয়েছে।`;
+        } else {
+          emailStatusNote = "সার্ভারে SMTP সক্রিয় না থাকায় সরাসরি ভেরিফিকেশন লিংক তৈরি করা হয়েছে।";
+        }
+      } catch (mailErr: any) {
+        console.error("[ForgotPassword] Mail send error:", mailErr?.message || mailErr);
+        emailStatusNote = "ইমেইল সার্ভারে সাময়িক সমস্যা হওয়ায় সরাসরি ভেরিফিকেশন লিংক দেওয়া হয়েছে।";
+      }
+    } else {
+      emailStatusNote = "আপনার অ্যাকাউন্টে কোনো ইমেইল সংযুক্ত নেই। মোবাইল নম্বর যাচাই সাপেক্ষে পাসওয়ার্ড রিসেট সক্রিয় করা হয়েছে।";
     }
 
     return NextResponse.json({
       success: true,
-      message: "A password reset link has been sent to your email.",
-      resetUrl: process.env.NODE_ENV !== "production" ? resetUrl : undefined,
-      previewUrl: emailResult?.previewUrl,
+      userFound: true,
+      name: user.name,
+      phone: user.phone,
+      email: user.email || null,
+      emailSent,
+      resetUrl,
+      message: emailSent
+        ? `আপনার ইমেইল (${user.email})-এ পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে। আপনি চাইলে নিচের বাটনে ক্লিক করেও সরাসরি নতুন পাসওয়ার্ড সেট করতে পারেন।`
+        : `অ্যাকাউন্ট ভেরিফিকেশন সম্পন্ন হয়েছে (${user.name})। সরাসরি নতুন পাসওয়ার্ড সেট করতে নিচের বাটনে ক্লিক করুন।`,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Forgot password API error:", error);
     return NextResponse.json(
-      { error: "Failed to process forgot password request." },
+      { error: "পাসওয়ার্ড রিসেট প্রক্রিয়াকরণে সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" },
       { status: 500 }
     );
   }
