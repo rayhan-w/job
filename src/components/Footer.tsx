@@ -190,9 +190,16 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom copyright */}
-        <div className="pt-8 border-t border-slate-800 text-center text-xs text-gray-500">
-          © 2026 {settings.siteName || "WOJOB"}. {language === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+        {/* Bottom copyright & Build Stamp */}
+        <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
+          <div>
+            © 2026 {settings.siteName || "WOJOB"}. {language === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+          </div>
+          {process.env.NEXT_PUBLIC_BUILD_SHA && (
+            <div className="text-[10px] text-gray-600 font-mono tracking-wider">
+              Build: {process.env.NEXT_PUBLIC_BUILD_SHA.slice(0, 7)}
+            </div>
+          )}
         </div>
       </div>
     </footer>

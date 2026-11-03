@@ -10,8 +10,12 @@
 /.next/
 /out/
 
-# production
+# production & staging
 /build
+/deploy/
+deploy/
+/uploads/
+uploads/
 
 # misc
 .DS_Store
@@ -23,8 +27,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
 .env
+.env.*
+.env*.local
+!.env.example
 
 # vercel
 .vercel
@@ -38,6 +44,3 @@ prisma/*.db
 prisma/*.db-journal
 dev.db
 dev.db-journal
-
-.vercel
-.env*
