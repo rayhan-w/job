@@ -16,6 +16,7 @@
 deploy/
 /uploads/
 uploads/
+*.zip
 
 # misc
 .DS_Store
